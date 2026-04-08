@@ -1,0 +1,5 @@
+
+> react-example@0.0.0 lint
+> tsc --noEmit
+
+src/pages/StorePage.tsx(12,32): error TS2307: Cannot find module '../components/store/QuickViewModal' or its corresponding type declarations.
