@@ -503,9 +503,18 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
                           referrerPolicy="no-referrer"
                         />
                         <div className="absolute top-3 left-3">
-                          <span className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg uppercase tracking-widest shadow-lg ${product.status === 'hidden' ? 'bg-slate-800/90' : 'bg-emerald-500/90'} backdrop-blur-sm`}>
-                            {product.status === 'hidden' ? 'Đã Ẩn' : 'Đang Bán'}
-                          </span>
+                          <div className="flex flex-col gap-1.5">
+                            <span className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg uppercase tracking-widest shadow-lg ${product.status === 'hidden' ? 'bg-slate-800/90' : 'bg-emerald-500/90'} backdrop-blur-sm w-fit`}>
+                              {product.status === 'hidden' ? 'Đã Ẩn' : 'Đang Bán'}
+                            </span>
+                            {product.approval_status !== 'approved' && (
+                              <span className={`text-[9px] font-black text-white px-2 py-1 rounded-lg uppercase tracking-wider shadow-lg backdrop-blur-sm w-fit ${
+                                product.approval_status === 'rejected' ? 'bg-red-500/90' : 'bg-orange-500/90'
+                              }`}>
+                                {product.approval_status === 'rejected' ? 'Bị từ chối' : 'Chờ duyệt'}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="p-5 flex flex-col flex-grow">

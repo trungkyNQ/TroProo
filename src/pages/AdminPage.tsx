@@ -67,6 +67,7 @@ interface Product {
   category: string;
   condition: string;
   status: string;
+  approval_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   ownerInfo?: Profile;
 }
@@ -96,7 +97,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   const [currentView, setCurrentView] = useState<AdminView>('listings');
   
   // Listings State
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('approved');
   const [listings, setListings] = useState<Listing[]>([]);
   
   // Products State
@@ -131,15 +132,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   // View User State
   const [viewingUser, setViewingUser] = useState<Profile | null>(null);
 
-  // Create User State
-  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
-  const [newUserForm, setNewUserForm] = useState({
-    email: '',
-    password: '',
-    full_name: '',
-    phone: '',
-    role: 'tenant'
-  });
+
 
   // Reports State
   const [reportsList, setReportsList] = useState<Report[]>([]);
@@ -379,6 +372,9 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
       onConfirm: async () => {
         try {
           setActionLoading(id);
+          const listing = listings.find(l => l.id === id);
+          if (!listing) throw new Error("Không tìm thấy tin đăng.");
+
           const { data, error } = await supabase
             .from('listings')
             .update({ approval_status: status })
@@ -388,10 +384,64 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
           if (error) throw error;
           if (!data || data.length === 0) throw new Error("Không có quyền chỉnh sửa ở Database.");
           
+          // Gửi thông báo cho chủ trọ
+          await supabase.from('notifications').insert({
+            sender_id: user?.id,
+            receiver_id: listing.owner_id,
+            type: status === 'approved' ? 'success' : 'error',
+            title: status === 'approved' ? 'Tin đăng đã được duyệt!' : 'Tin đăng bị từ chối',
+            message: status === 'approved' 
+              ? `Tin đăng "${listing.title}" của bạn đã được phê duyệt và hiển thị công khai.`
+              : `Rất tiếc, tin đăng "${listing.title}" của bạn không được phê duyệt. Vui lòng kiểm tra lại thông tin.`,
+            related_entity_id: id
+          });
+
           setListings(prev => prev.map(l => l.id === id ? { ...l, approval_status: status } : l));
           showToast(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} tin đăng!`, 'success');
         } catch (error: any) {
           showToast(error.message || 'Lỗi cập nhật trạng thái.', 'error');
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
+  const handleProductApproval = async (id: string, status: 'approved' | 'rejected') => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xác nhận phê duyệt sản phẩm',
+      message: `Bạn có chắc muốn ${status === 'approved' ? 'duyệt' : 'từ chối'} sản phẩm này?`,
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          setActionLoading(id);
+          const product = products.find(p => p.id === id);
+          if (!product) throw new Error("Không tìm thấy sản phẩm.");
+
+          const { error } = await supabase
+            .from('products')
+            .update({ approval_status: status })
+            .eq('id', id);
+
+          if (error) throw error;
+          
+          // Gửi thông báo cho người bán
+          await supabase.from('notifications').insert({
+            sender_id: user?.id,
+            receiver_id: product.owner_id,
+            type: status === 'approved' ? 'success' : 'error',
+            title: status === 'approved' ? 'Sản phẩm đã được duyệt!' : 'Sản phẩm bị từ chối',
+            message: status === 'approved' 
+              ? `Sản phẩm "${product.title}" của bạn đã được phê duyệt và hiển thị trên cửa hàng.`
+              : `Rất tiếc, sản phẩm "${product.title}" của bạn không được phê duyệt. Vui lòng kiểm tra lại hình ảnh và thông tin.`,
+            related_entity_id: id
+          });
+
+          setProducts(prev => prev.map(p => p.id === id ? { ...p, approval_status: status } : p));
+          showToast(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} sản phẩm!`, 'success');
+        } catch (error: any) {
+          showToast(error.message || 'Lỗi cập nhật trạng thái sản phẩm.', 'error');
         } finally {
           setActionLoading(null);
         }
@@ -469,15 +519,20 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   };
 
   const listingStats = {
-    pending: listings.filter(l => l.approval_status === 'pending').length,
-    approved: listings.filter(l => l.approval_status === 'approved').length,
-    rejected: listings.filter(l => l.approval_status === 'rejected').length,
+    pending: listings.filter(l => l.approval_status === 'pending').length + products.filter(p => p.approval_status === 'pending').length,
+    approved: listings.filter(l => l.approval_status === 'approved').length + products.filter(p => p.approval_status === 'approved').length,
+    rejected: listings.filter(l => l.approval_status === 'rejected').length + products.filter(p => p.approval_status === 'rejected').length,
     totalProducts: products.length,
     availableProducts: products.filter(p => p.status === 'available').length,
-    soldProducts: products.filter(p => p.status === 'sold').length
+    soldProducts: products.filter(p => p.status === 'sold').length,
+    // Riêng biệt cho tab Bán hàng
+    productPending: products.filter(p => p.approval_status === 'pending').length,
+    productApproved: products.filter(p => p.approval_status === 'approved').length,
+    productRejected: products.filter(p => p.approval_status === 'rejected').length,
   };
 
   const currentListings = listings.filter(l => l.approval_status === activeTab);
+  const currentProducts = products.filter(p => p.approval_status === activeTab);
 
   // ===================== USERS LOGIC =====================
   const fetchUsers = async () => {
@@ -537,25 +592,25 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   const handleDeleteUser = async (id: string) => {
     setConfirmModal({
       isOpen: true,
-      title: 'Xóa hồ sơ người dùng',
-      message: 'Bạn có chắc muốn xoá vĩnh viễn hồ sơ người dùng này? Hành động này không thể hoàn tác.',
+      title: 'XÓA VĨNH VIỄN TÀI KHOẢN',
+      message: 'Chú ý: Hành động này sẽ xóa sạch 100% dữ liệu (Phòng, Hợp đồng, Hóa đơn, Tin nhắn) và tài khoản đăng nhập của người dùng này. Hành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn muốn thực hiện?',
       type: 'danger',
       onConfirm: async () => {
         try {
           setActionLoading(id);
-          const { data, error } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', id)
-            .select();
+          
+          // Sử dụng RPC siêu cấp để xóa dọn dẹp toàn bộ dữ liệu liên quan và cả tài khoản Auth
+          const { error } = await supabase.rpc('admin_delete_account_cascade', {
+            target_user_id: id
+          });
 
           if (error) throw error;
-          if (!data || data.length === 0) throw new Error("Không thể xoá. Có thể do ràng buộc dữ liệu hoặc RLS.");
           
           setUsersList(prev => prev.filter(u => u.id !== id));
-          showToast('Đã xoá hồ sơ người dùng thành công!', 'success');
+          showToast('Đã xóa vĩnh viễn tài khoản người dùng thành công!', 'success');
         } catch (error: any) {
-          showToast(error.message || 'Lỗi khi xoá hồ sơ.', 'error');
+          console.error('Error deleting account:', error);
+          showToast(error.message || 'Lỗi nghiêm trọng khi xóa tài khoản.', 'error');
         } finally {
           setActionLoading(null);
         }
@@ -572,70 +627,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
 
   const currentUsers = usersList.filter(u => userFilter === 'all' || u.role === userFilter);
 
-  const handleCreateUser = async () => {
-    if (!newUserForm.email || !newUserForm.password || !newUserForm.full_name) {
-      showToast('Vui lòng điền Email, Mật khẩu và Họ tên.', 'info');
-      return;
-    }
-
-    try {
-      setActionLoading('creating-user');
-      
-      // 1. Tạo một temp client KHÔNG lưu session để tránh làm Admin bị logout
-      const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false
-        }
-      });
-      
-      // 2. Tạo user trong Auth qua temp client
-      const { data: authData, error: authError } = await tempClient.auth.signUp({
-        email: newUserForm.email,
-        password: newUserForm.password,
-        options: {
-          data: {
-            full_name: newUserForm.full_name,
-            role: newUserForm.role
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // 3. Cập nhật thủ công vào profiles để đảm bảo có số điện thoại (trong trường hợp trigger chưa có)
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: authData.user.id,
-            full_name: newUserForm.full_name,
-            phone: newUserForm.phone,
-            role: newUserForm.role,
-            updated_at: new Date().toISOString()
-          });
-
-        if (profileError) {
-          console.warn('Profile update warning:', profileError);
-        }
-
-        showToast(`Thành công! Đã tạo tài khoản cho ${newUserForm.full_name}.`, 'success');
-        setShowCreateUserModal(false);
-        setNewUserForm({ email: '', password: '', full_name: '', phone: '', role: 'tenant' });
-        fetchUsers();
-      }
-    } catch (error: any) {
-      console.error('Error creating user:', error);
-      let errorMsg = error.message || 'Lỗi khi tạo người dùng.';
-      if (errorMsg === 'User already registered') {
-        errorMsg = 'Email này đã được đăng ký tài khoản trên hệ thống. Vui lòng sử dụng email khác.';
-      }
-      showToast(errorMsg, 'error');
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
   // ===================== REPORTS & STATS LOGIC =====================
   const fetchOverallStats = async () => {
@@ -757,8 +748,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   // ===================== RENDER =====================
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      
-
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="hidden lg:flex w-72 bg-white border-r border-slate-200 flex-col sticky top-16 h-[calc(100vh-64px)] overflow-y-auto shrink-0">
@@ -767,7 +756,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
                 <Shield className="w-6 h-6" />
               </div>
-              <h2 className="text-lg font-bold text-slate-900 font-display">Admin Portal</h2>
+              <h2 className="text-lg font-bold text-slate-900 font-display">Quản Trị Viên</h2>
             </div>
             
             <nav className="space-y-2">
@@ -780,31 +769,17 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
               </button>
               <button 
                 onClick={() => setCurrentView('listings')}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'listings' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'listings' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
               >
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5" />
-                  <span>Quản lý tin đăng</span>
-                </div>
-                {!loading && (
-                  <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                    {listings.length + products.length}
-                  </span>
-                )}
+                <FileText className="w-5 h-5" />
+                <span>Quản lý tin đăng</span>
               </button>
               <button 
                 onClick={() => setCurrentView('users')}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'users' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'users' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
               >
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5" />
-                  <span>Quản lý người dùng</span>
-                </div>
-                {!loading && (
-                   <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                    {usersList.length}
-                  </span>
-                )}
+                <Users className="w-5 h-5" />
+                <span>Quản lý người dùng</span>
               </button>
               <button 
                 onClick={() => setCurrentView('reports')}
@@ -823,21 +798,23 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
             {/* VIEW: QUẢN LÝ TIN ĐĂNG */}
             {currentView === 'listings' && (
             <AdminListingsTab 
+              listingMode={listingMode} setListingMode={setListingMode}
+              activeTab={activeTab} setActiveTab={setActiveTab}
+              currentListings={currentListings} products={currentProducts}
+              loading={loading} actionLoading={actionLoading}
+              handleUpdateStatus={handleUpdateStatus} handleEditClick={handleEditClick}
+              handleDeleteListing={handleDeleteListing}
+              handleUpdateProductStatus={handleUpdateProductStatus}
+              handleUpdateProductApproval={handleProductApproval}
+              handleEditProductClick={handleEditProductClick}
+              handleDeleteProduct={handleDeleteProduct}
+              highlightedListingId={highlightedListingId} getInitials={getInitials} formatDate={formatDate}
+              listingStats={listingStats}
               editingListing={editingListing} setEditingListing={setEditingListing}
               editForm={editForm} setEditForm={setEditForm} handleSaveEdit={handleSaveEdit}
               editingProduct={editingProduct} setEditingProduct={setEditingProduct}
               productEditForm={productEditForm} setProductEditForm={setProductEditForm} handleSaveProductEdit={handleSaveProductEdit}
-              setHighlightedListingId={setHighlightedListingId} onNavigate={onNavigate} Page={null as any}
-              
-              listingMode={listingMode} setListingMode={setListingMode}
-              activeTab={activeTab} setActiveTab={setActiveTab}
-              currentListings={currentListings} products={products}
-              loading={loading} actionLoading={actionLoading}
-              handleUpdateStatus={handleUpdateStatus} handleEditClick={handleEditClick}
-              handleDeleteListing={handleDeleteListing} handleUpdateProductStatus={handleUpdateProductStatus}
-              handleEditProductClick={handleEditProductClick} handleDeleteProduct={handleDeleteProduct}
-              highlightedListingId={highlightedListingId} getInitials={getInitials} formatDate={formatDate}
-              listingStats={listingStats}
+              setHighlightedListingId={setHighlightedListingId} onNavigate={onNavigate}
             />
           )}
 
@@ -846,15 +823,12 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
             <AdminUsersTab 
               editingUser={editingUser} setEditingUser={setEditingUser}
               userEditForm={userEditForm} setUserEditForm={setUserEditForm} handleSaveUserEdit={handleSaveUserEdit}
-              showCreateUserModal={showCreateUserModal} 
-              newUserForm={newUserForm} setNewUserForm={setNewUserForm} handleCreateUser={handleCreateUser}
               viewingUser={viewingUser}
-              
               userFilter={userFilter} setUserFilter={setUserFilter}
               currentUsers={currentUsers} userStats={userStats}
               loading={loading} actionLoading={actionLoading}
               handleEditUserClick={handleEditUserClick} handleDeleteUser={handleDeleteUser}
-              setViewingUser={setViewingUser} setShowCreateUserModal={setShowCreateUserModal}
+              setViewingUser={setViewingUser}
               getInitials={getInitials} formatDate={formatDate}
             />
           )}

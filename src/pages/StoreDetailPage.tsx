@@ -67,6 +67,14 @@ export const StoreDetailPage = ({ onNavigate, user, onLogout, params }: StoreDet
           .single();
 
         if (error) throw error;
+
+        // Security check: Only show approved products to public. 
+        // Owners can still see their own pending/rejected products for preview.
+        if (data.approval_status !== 'approved' && (!user || user.id !== data.owner_id)) {
+          setProduct(null);
+          return;
+        }
+
         setProduct(data);
 
         // Fetch Related Products

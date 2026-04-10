@@ -137,11 +137,11 @@ export default function App() {
           {/* Protected Routes */}
           <Route 
             path="/manage" 
-            element={<LegacyPageWrapper Component={ManagePage} requireAuth allowedRoles={['landlord', 'admin']} />} 
+            element={<LegacyPageWrapper Component={ManagePage} requireAuth allowedRoles={['landlord']} />} 
           />
           <Route 
             path="/tenant" 
-            element={<LegacyPageWrapper Component={TenantPage} requireAuth allowedRoles={['tenant', 'admin']} />} 
+            element={<LegacyPageWrapper Component={TenantPage} requireAuth allowedRoles={['tenant']} />} 
           />
           <Route 
             path="/admin" 

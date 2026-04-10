@@ -128,7 +128,8 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
         stock: parseInt(form.stock.toString()) || 1,
         image_url: validImages[0],
         images: validImages,
-        status: form.status
+        status: form.status,
+        approval_status: 'pending'
       };
 
       if (isEdit) {
@@ -137,13 +138,13 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
           .update(payload)
           .eq('id', product.id);
         if (error) throw error;
-        showToast('Cập nhật thành công!', 'success');
+        showToast('Cập nhật thành công! Đang chờ duyệt lại.', 'success');
       } else {
         const { error } = await supabase
           .from('products')
           .insert(payload);
         if (error) throw error;
-        showToast('Đăng tin thành công!', 'success');
+        showToast('Đăng tin thành công! Đang chờ duyệt.', 'success');
       }
 
       onSuccess();

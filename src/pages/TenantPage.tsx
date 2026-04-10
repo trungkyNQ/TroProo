@@ -11,6 +11,8 @@ import { TenantRoomsTab } from '../components/tenant/TenantRoomsTab';
 import { TenantContractsTab } from '../components/tenant/TenantContractsTab';
 import { TenantAccountTab } from '../components/tenant/TenantAccountTab';
 import { TenantSupportModal } from '../components/tenant/TenantSupportModal';
+import { TenantInvoicesTab } from '../components/tenant/TenantInvoicesTab';
+import { InvoiceDetailModal } from '../components/tenant/modals/InvoiceDetailModal';
 
 import { 
   Building,
@@ -44,7 +46,28 @@ interface TenantPageProps {
 
 export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: TenantPageProps) => {
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState(initialParams?.tab || 'overview');
+  
+  // Get initial tab from URL or LocalStorage
+  const getInitialTab = () => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTab = params.get('tab');
+    if (urlTab) return urlTab;
+
+    const savedTab = localStorage.getItem('last_tenant_tab');
+    return savedTab || initialParams?.tab || 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+  
+  // Update URL and LocalStorage when tab changes
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', activeTab);
+    window.history.replaceState({}, '', url.toString());
+    
+    localStorage.setItem('last_tenant_tab', activeTab);
+  }, [activeTab]);
+
   const [activeChatId, setActiveChatId] = useState<string | null>(initialParams?.activeChat || null);
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [tenantRooms, setTenantRooms] = useState<any[]>([]);
@@ -61,6 +84,13 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
       setActiveChatId(initialParams.activeChat);
     }
   }, [initialParams]);
+
+  // Invoices states
+  const [tenantInvoices, setTenantInvoices] = useState<any[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [showInvoiceDetailModal, setShowInvoiceDetailModal] = useState(false);
+  const [updatingInvoice, setUpdatingInvoice] = useState(false);
 
   // Support Requests states
   const [supportRequestsData, setSupportRequestsData] = useState<any[]>([]);
@@ -93,8 +123,61 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
       fetchSupportRequests();
       fetchPendingContracts();
       fetchProfile();
+      fetchTenantInvoices();
     }
   }, [user]);
+
+  const fetchTenantInvoices = async () => {
+    if (!user) return;
+    setLoadingInvoices(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`*, rooms(title, price, service_fee, electricity_price, water_price)`)
+        .eq('tenant_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setTenantInvoices(data || []);
+    } catch (err) {
+      console.error('Error fetching tenant invoices:', err);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
+  const handlePayInvoice = async (invoiceId: string) => {
+    if (!window.confirm('Xác nhận bạn đã chuyển khoản số tiền này cho Chủ Trọ?')) return;
+    setUpdatingInvoice(true);
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'pending_verification' })
+        .eq('id', invoiceId);
+      if (error) throw error;
+      
+      const inv = tenantInvoices.find(i => i.id === invoiceId);
+      if (inv) {
+        await supabase.from('notifications').insert({
+          receiver_id: inv.owner_id,
+          sender_id: user?.id,
+          type: 'invoice',
+          title: 'Khách thông báo đã thanh toán',
+          message: inv.title,
+          action_url: '/manage?tab=invoices'
+        });
+      }
+
+      showToast('Đã xác nhận chuyển khoản. Chờ chủ trọ kiểm tra.', 'success');
+      await fetchTenantInvoices();
+      setShowInvoiceDetailModal(false);
+    } catch (err) {
+      console.error('Error paying invoice:', err);
+      showToast('Lỗi khi cập nhật trạng thái.', 'error');
+    } finally {
+      setUpdatingInvoice(false);
+    }
+  };
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -376,6 +459,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
     { id: 'rooms', label: 'Phòng của tôi', icon: Bed },
     { id: 'contracts', label: 'Hợp đồng', icon: FileText },
+    { id: 'invoices', label: 'Hóa đơn', icon: Wallet },
     { id: 'messages', label: 'Tin nhắn', icon: MessageSquare, badge: 3 },
     { id: 'account', label: 'Tài khoản', icon: User },
   ];
@@ -476,6 +560,17 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
             />
           )}
 
+          {activeTab === 'invoices' && (
+            <TenantInvoicesTab
+              invoicesData={tenantInvoices}
+              onViewInvoice={(inv) => {
+                setSelectedInvoice(inv);
+                setShowInvoiceDetailModal(true);
+              }}
+              onPayInvoice={handlePayInvoice}
+            />
+          )}
+
           {activeTab === 'account' && (
             <TenantAccountTab 
               user={user} 
@@ -497,7 +592,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
             />
           )}
 
-          {activeTab !== 'overview' && activeTab !== 'messages' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'account' && (
+          {activeTab !== 'overview' && activeTab !== 'messages' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'account' && activeTab !== 'invoices' && (
             <div className="flex flex-col items-center justify-center h-96 text-slate-400">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-300" />
               <h3 className="text-lg font-bold text-slate-900 mb-2">Tính năng đang phát triển</h3>
@@ -506,6 +601,14 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
           )}
         </main>
       </div>
+
+      <InvoiceDetailModal
+        show={showInvoiceDetailModal}
+        onClose={() => setShowInvoiceDetailModal(false)}
+        invoice={selectedInvoice}
+        loading={updatingInvoice}
+        onPay={() => handlePayInvoice(selectedInvoice?.id)}
+      />
 
       <TenantSupportModal 
         showAddRequestModal={showAddRequestModal} 

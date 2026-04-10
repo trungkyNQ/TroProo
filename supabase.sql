@@ -35,6 +35,13 @@ CREATE TABLE public.invoices (
   due_date date NOT NULL,
   status text DEFAULT 'unpaid'::text,
   created_at timestamp with time zone DEFAULT now(),
+  title text,
+  rent_fee bigint DEFAULT 0,
+  electricity_fee bigint DEFAULT 0,
+  water_fee bigint DEFAULT 0,
+  service_fee bigint DEFAULT 0,
+  electricity_usage integer DEFAULT 0,
+  water_usage integer DEFAULT 0,
   CONSTRAINT invoices_pkey PRIMARY KEY (id),
   CONSTRAINT invoices_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id),
   CONSTRAINT invoices_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.rooms(id),
@@ -101,8 +108,10 @@ CREATE TABLE public.orders (
   phone text NOT NULL,
   address text NOT NULL,
   payment_method text NOT NULL CHECK (payment_method = ANY (ARRAY['vnpay'::text, 'cod'::text])),
-  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text, 'cancelled'::text])),
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'shipping'::text, 'delivered'::text, 'completed'::text, 'failed'::text, 'cancelled'::text])),
   created_at timestamp with time zone DEFAULT now(),
+  seller_note text,
+  status_updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -172,6 +181,8 @@ CREATE TABLE public.rooms (
   water_price bigint DEFAULT 20000,
   service_fee bigint DEFAULT 150000,
   created_at timestamp with time zone DEFAULT now(),
+  initial_electricity_number integer DEFAULT 0,
+  initial_water_number integer DEFAULT 0,
   CONSTRAINT rooms_pkey PRIMARY KEY (id),
   CONSTRAINT rooms_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id)
 );

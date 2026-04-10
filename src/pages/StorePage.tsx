@@ -69,6 +69,7 @@ export const StorePage = ({ onNavigate, user, onLogout }: StorePageProps) => {
       let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
+        .eq('approval_status', 'approved')
         .range(from, to);
       
       if (sortBy === 'newest') {

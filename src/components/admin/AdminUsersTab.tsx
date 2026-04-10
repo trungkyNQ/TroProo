@@ -14,7 +14,6 @@ interface AdminUsersTabProps {
   handleEditUserClick: (user: any) => void;
   handleDeleteUser: (id: string) => void;
   setViewingUser: (user: any) => void;
-  setShowCreateUserModal: (show: boolean) => void;
   getInitials: (name?: string) => string;
   formatDate: (date: string) => string;
   editingUser: any;
@@ -22,19 +21,15 @@ interface AdminUsersTabProps {
   userEditForm: any;
   setUserEditForm: (form: any) => void;
   handleSaveUserEdit: () => void;
-  showCreateUserModal: boolean;
-  newUserForm: any;
-  setNewUserForm: (form: any) => void;
-  handleCreateUser: () => void;
   viewingUser: any;
 }
 
 export const AdminUsersTab = ({ 
   userFilter, setUserFilter, currentUsers, userStats, loading, actionLoading,
-  handleEditUserClick, handleDeleteUser, setViewingUser, setShowCreateUserModal,
+  handleEditUserClick, handleDeleteUser, setViewingUser,
   getInitials, formatDate,
   editingUser, setEditingUser, userEditForm, setUserEditForm, handleSaveUserEdit,
-  showCreateUserModal, newUserForm, setNewUserForm, handleCreateUser, viewingUser
+  viewingUser
 }: AdminUsersTabProps) => {
   return (
     <>
@@ -44,28 +39,28 @@ export const AdminUsersTab = ({
                     <h2 className="text-2xl font-bold text-slate-900">Quản lý Thành viên</h2>
                     <p className="text-slate-500">Xem và quản lý tất cả người dùng trong hệ thống.</p>
                   </div>
-                  <button onClick={() => setShowCreateUserModal(true)} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl font-bold hover:bg-primary-hover transition-colors">
-                    <Plus className="w-5 h-5" />
-                    Thêm người dùng
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 shrink-0">
-                  <div className="bg-white p-4 rounded-xl border border-slate-200">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tổng cộng</p>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
+                       onClick={() => setUserFilter('all')}>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Tổng cộng</p>
                     <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.total}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Chủ trọ</p>
-                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.landlords}</p>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
+                       onClick={() => setUserFilter('landlord')}>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Chủ trọ</p>
+                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.landlord}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Người thuê</p>
-                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.tenants}</p>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
+                       onClick={() => setUserFilter('tenant')}>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Người thuê</p>
+                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.tenant}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Quản trị</p>
-                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.admins}</p>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
+                       onClick={() => setUserFilter('admin')}>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Quản trị</p>
+                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.admin}</p>
                   </div>
                 </div>
 
@@ -133,14 +128,10 @@ export const AdminUsersTab = ({
                                 </span>
                               </td>
                               <td className="px-6 py-4">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                                    <Mail className="w-3 h-3" /> {user.email}
-                                  </div>
-                                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                                    <Phone className="w-3 h-3" /> {user.phone || 'Chưa cung cấp'}
-                                  </div>
+                                <div className="flex items-center gap-2 text-sm font-bold text-slate-600 border-b border-slate-100 pb-1 mb-1">
+                                  <Phone className="w-4 h-4 text-primary" /> {user.phone || 'Chưa cung cấp'}
                                 </div>
+                                <p className="text-[10px] text-slate-400 font-medium">SĐT liên hệ chính</p>
                               </td>
                               <td className="px-6 py-4 text-xs text-slate-500 font-medium">
                                 {formatDate(user.created_at)}
@@ -206,54 +197,6 @@ export const AdminUsersTab = ({
                   </div>
                 )}
 
-                {/* MODAL TẠO NGƯỜI DÙNG MỚI */}
-                {showCreateUserModal && (
-                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                      <div className="p-6 border-b border-slate-100">
-                        <h3 className="text-xl font-bold text-slate-900">Thêm người dùng mới</h3>
-                      </div>
-                      <div className="p-6 space-y-4">
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Email (Tài khoản)</label>
-                          <input type="email" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none" 
-                            value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Mật khẩu</label>
-                          <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none" 
-                            value={newUserForm.password} onChange={e => setNewUserForm({...newUserForm, password: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Họ và tên</label>
-                          <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none" 
-                            value={newUserForm.full_name} onChange={e => setNewUserForm({...newUserForm, full_name: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Số điện thoại</label>
-                          <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none" 
-                            value={newUserForm.phone} onChange={e => setNewUserForm({...newUserForm, phone: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Vai trò</label>
-                          <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
-                            value={newUserForm.role} onChange={e => setNewUserForm({...newUserForm, role: e.target.value})}>
-                            <option value="tenant">Tenant</option>
-                            <option value="landlord">Landlord</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                        <button onClick={() => setShowCreateUserModal(false)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-lg">Hủy</button>
-                        <button onClick={handleCreateUser} disabled={actionLoading === 'creating-user'} className="px-4 py-2 text-sm font-bold bg-primary text-white hover:bg-primary-hover rounded-lg flex items-center gap-2">
-                          {actionLoading === 'creating-user' && <Loader2 className="w-4 h-4 animate-spin"/>}
-                          Tạo tài khoản
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* MODAL XEM CHI TIẾT NGƯỜI DÙNG */}
                 {viewingUser && (
@@ -282,13 +225,9 @@ export const AdminUsersTab = ({
                           <p className="text-slate-500 text-sm mt-1">ID: {viewingUser.id}</p>
                           
                           <div className="grid grid-cols-2 gap-6 mt-8">
-                            <div className="p-4 bg-slate-50 rounded-2xl">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Email</p>
-                              <p className="text-sm font-bold text-slate-700">{viewingUser.email}</p>
-                            </div>
-                            <div className="p-4 bg-slate-50 rounded-2xl">
+                            <div className="p-4 bg-slate-50 rounded-2xl col-span-2">
                               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số điện thoại</p>
-                              <p className="text-sm font-bold text-slate-700">{viewingUser.phone || 'Chưa cập nhật'}</p>
+                              <p className="text-base font-black text-slate-700">{viewingUser.phone || 'Chưa cập nhật'}</p>
                             </div>
                             <div className="p-4 bg-slate-50 rounded-2xl">
                               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Vai trò</p>

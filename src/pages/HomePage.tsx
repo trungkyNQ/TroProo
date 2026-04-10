@@ -34,6 +34,7 @@ export const HomePage = ({
 }) => {
   const [realListings, setRealListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [thongKeKhuVuc, setThongKeKhuVuc] = useState<Record<string, number>>({});
 
   const [searchLocation, setSearchLocation] = useState('');
   const [priceRange, setPriceRange] = useState('all');
@@ -46,7 +47,29 @@ export const HomePage = ({
 
   useEffect(() => {
     fetchListings();
+    layThongKeKhuVuc();
   }, []);
+
+  const layThongKeKhuVuc = async () => {
+    try {
+      const stats: Record<string, number> = {};
+      await Promise.all(
+        areas.map(async (khuVuc) => {
+          const { count } = await supabase
+            .from('listings')
+            .select('*', { count: 'exact', head: true })
+            .ilike('location', `%${khuVuc.name}%`)
+            .eq('is_active', true)
+            .eq('approval_status', 'approved');
+          
+          stats[khuVuc.name] = count || 0;
+        })
+      );
+      setThongKeKhuVuc(stats);
+    } catch (error) {
+      console.error('Error fetching area stats:', error);
+    }
+  };
 
   const fetchListings = async () => {
     setLoading(true);
@@ -360,7 +383,15 @@ export const HomePage = ({
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {areas.map((area) => (
-                <a key={area.name} className="relative h-64 rounded-xl overflow-hidden group cursor-pointer" href="#">
+                <a 
+                  key={area.name} 
+                  className="relative h-64 rounded-xl overflow-hidden group cursor-pointer" 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigate('search', { location: area.name });
+                  }}
+                >
                   <img 
                     alt={area.name} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
@@ -370,7 +401,7 @@ export const HomePage = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div className="absolute bottom-4 left-4 text-white">
                     <p className="text-lg font-bold font-display">{area.name}</p>
-                    <p className="text-xs opacity-80">{area.count} tin đăng</p>
+                    <p className="text-xs opacity-80">{thongKeKhuVuc[area.name] || 0} tin đăng</p>
                   </div>
                 </a>
               ))}
