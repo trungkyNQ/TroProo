@@ -9,15 +9,6 @@ import {
   MapPin, 
   ArrowRight, 
   Square, 
-  Wind, 
-  DoorOpen,
-  Mail,
-  Phone,
-  Facebook,
-  Instagram,
-  Twitter,
-  User,
-  LogOut,
   ChevronDown
 } from 'lucide-react';
 import { listings, areas } from '../constants';
@@ -52,19 +43,32 @@ export const HomePage = ({
 
   const layThongKeKhuVuc = async () => {
     try {
+      // Tối ưu: Lấy tất cả location của bài đăng hợp lệ trong 1 request duy nhất
+      const { data: locations, error } = await supabase
+        .from('listings')
+        .select('location')
+        .eq('is_active', true)
+        .eq('approval_status', 'approved');
+
+      if (error) throw error;
+
       const stats: Record<string, number> = {};
-      await Promise.all(
-        areas.map(async (khuVuc) => {
-          const { count } = await supabase
-            .from('listings')
-            .select('*', { count: 'exact', head: true })
-            .ilike('location', `%${khuVuc.name}%`)
-            .eq('is_active', true)
-            .eq('approval_status', 'approved');
-          
-          stats[khuVuc.name] = count || 0;
-        })
-      );
+      
+      // Khởi tạo các quận với giá trị 0
+      areas.forEach(a => stats[a.name] = 0);
+
+      // Đếm tại client
+      if (locations) {
+        locations.forEach(row => {
+          const loc = row.location?.toLowerCase() || '';
+          areas.forEach(area => {
+            if (loc.includes(area.name.toLowerCase())) {
+              stats[area.name]++;
+            }
+          });
+        });
+      }
+      
       setThongKeKhuVuc(stats);
     } catch (error) {
       console.error('Error fetching area stats:', error);
@@ -74,9 +78,10 @@ export const HomePage = ({
   const fetchListings = async () => {
     setLoading(true);
     try {
+      // Tối ưu: Chỉ lấy các cột cần thiết để hiển thị card, giảm tải cho network
       const { data, error } = await supabase
         .from('listings')
-        .select('*')
+        .select('id, title, price, area, location, image_url, created_at')
         .eq('is_active', true)
         .eq('approval_status', 'approved')
         .order('created_at', { ascending: false })

@@ -16,9 +16,11 @@ import Messaging from '../shared/Messaging';
 interface ListingsTabProps {
   listingsData: any[];
   setShowAddListingModal: (v: boolean) => void;
+  onEditListing: (listing: any) => void;
+  onDeleteListing: (id: string) => void;
 }
 
-export const ListingsTab = ({ listingsData, setShowAddListingModal }: ListingsTabProps) => {
+export const ListingsTab = ({ listingsData, setShowAddListingModal, onEditListing, onDeleteListing }: ListingsTabProps) => {
   const activeTab = 'listings';
 
   return (
@@ -31,7 +33,7 @@ export const ListingsTab = ({ listingsData, setShowAddListingModal }: ListingsTa
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 font-display">Quản lý bài đăng</h2>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 font-display">Quản lý Bài Đăng</h2>
                   <p className="text-slate-500 font-medium">Các tin đăng quảng bá phòng trọ của bạn trên hệ thống.</p>
                 </div>
                 <button
@@ -43,36 +45,63 @@ export const ListingsTab = ({ listingsData, setShowAddListingModal }: ListingsTa
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {listingsData.map((listing) => (
-                  <div key={listing.id} className="bg-white rounded-[32px] overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all group">
-                    <div className="relative aspect-video overflow-hidden">
-                      <img 
-                        src={listing.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400'} 
-                        alt={listing.title} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg ${listing.is_active ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'}`}>
-                        {listing.is_active ? 'Đang hiển thị' : 'Tạm ẩn'}
+              <div className={listingsData.length > 0 ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : ""}>
+                {listingsData.length > 0 ? (
+                  listingsData.map((listing) => (
+                    <div key={listing.id} className="bg-white rounded-[32px] overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all group">
+                      <div className="relative aspect-video overflow-hidden">
+                        <img 
+                          src={listing.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400'} 
+                          alt={listing.title} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg ${listing.is_active ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'}`}>
+                          {listing.is_active ? 'Đang hiển thị' : 'Tạm ẩn'}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-8">
-                      <h3 className="text-lg font-black text-slate-900 font-display mb-2 group-hover:text-primary transition-colors">{listing.title}</h3>
-                      <p className="text-slate-500 text-sm font-medium mb-6 line-clamp-2">{listing.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-black text-primary font-display">{Number(listing.price).toLocaleString()}đ</span>
-                        <div className="flex gap-2">
-                          <button className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-primary transition-all">
-                            <Edit3 className="w-5 h-5" />
-                          </button>
-                          <button className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 transition-all">
-                            <Ban className="w-5 h-5" />
-                          </button>
+                      <div className="p-8">
+                        <h3 className="text-lg font-black text-slate-900 font-display mb-2 group-hover:text-primary transition-colors">{listing.title}</h3>
+                        <p className="text-slate-500 text-sm font-medium mb-6 line-clamp-2">{listing.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xl font-black text-primary font-display">{Number(listing.price).toLocaleString()}đ</span>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => onEditListing(listing)}
+                              className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-primary transition-all"
+                            >
+                              <Edit3 className="w-5 h-5" />
+                            </button>
+                            <button 
+                              onClick={() => onDeleteListing(listing.id)}
+                              className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 transition-all"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white rounded-3xl border border-slate-200 py-20 flex flex-col items-center justify-center text-center px-4"
+                  >
+                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-6">
+                      <Layers className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có bài đăng nào</h3>
+                    <p className="text-slate-500 max-w-sm mb-8 font-medium">Bạn chưa đăng tải phòng nào lên hệ thống tìm kiếm công khai.</p>
+                    <button
+                      onClick={() => setShowAddListingModal(true)}
+                      className="bg-primary text-white font-bold py-4 px-8 rounded-2xl hover:bg-primary-hover transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-2 group"
+                    >
+                      <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                      <span>Tạo bài đăng mới ngay</span>
+                    </button>
+                  </motion.div>
+                )}
               </div>
             </motion.div>
           )}

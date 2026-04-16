@@ -15,9 +15,10 @@ import Messaging from '../shared/Messaging';
 
 interface ContractsTabProps {
   contractsData: any[];
+  roomsData: any[];
 }
 
-export const ContractsTab = ({ contractsData }: ContractsTabProps) => {
+export const ContractsTab = ({ contractsData, roomsData }: ContractsTabProps) => {
   const [contractFilter, setContractFilter] = useState('all');
 
   const contracts = contractsData.map(c => ({
@@ -49,11 +50,19 @@ export const ContractsTab = ({ contractsData }: ContractsTabProps) => {
                   <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 font-display">Quản lý Hợp đồng</h2>
                   <p className="text-slate-500 font-medium">Xem và quản lý tất cả các hợp đồng thuê phòng của bạn.</p>
                 </div>
-                <button className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary-hover transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-100">
-                  <Plus className="w-5 h-5" />
-                  Tạo hợp đồng mới
-                </button>
+
               </div>
+
+              {/* Empty state when no rooms yet */}
+              {roomsData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200">
+                  <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-6">
+                    <FileSignature className="w-10 h-10" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có phòng nào</h3>
+                  <p className="text-slate-500 max-w-sm">Hợp đồng sẽ xuất hiện sau khi bạn thêm phòng và gán người thuê.</p>
+                </div>
+              ) : (<>
 
               {/* Statistics Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -115,8 +124,17 @@ export const ContractsTab = ({ contractsData }: ContractsTabProps) => {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                {filteredContracts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center border-t border-slate-100">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-6">
+                      <FileSignature className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có hợp đồng nào</h3>
+                    <p className="text-slate-500 max-w-sm mb-6">Không tìm thấy hợp đồng phù hợp với bộ lọc hiện tại.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50/50">
                         <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Khách thuê</th>
@@ -175,25 +193,29 @@ export const ContractsTab = ({ contractsData }: ContractsTabProps) => {
                     </tbody>
                   </table>
                 </div>
+                )}
 
                 {/* Pagination */}
-                <div className="p-6 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    Hiển thị 1-{filteredContracts.length} trên tổng số {contractsData.length} hợp đồng
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 border border-slate-200 rounded-xl text-slate-300 hover:bg-slate-50 disabled:opacity-50 transition-all" disabled>
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl font-black text-sm shadow-md shadow-orange-100">1</button>
-                    <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-slate-50 rounded-xl font-black text-sm transition-all">2</button>
-                    <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-slate-50 rounded-xl font-black text-sm transition-all">3</button>
-                    <button className="p-2 border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 transition-all">
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
+                {filteredContracts.length > 0 && (
+                  <div className="p-6 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Hiển thị 1-{filteredContracts.length} trên tổng số {contractsData.length} hợp đồng
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 border border-slate-200 rounded-xl text-slate-300 hover:bg-slate-50 disabled:opacity-50 transition-all" disabled>
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl font-black text-sm shadow-md shadow-orange-100">1</button>
+                      <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-slate-50 rounded-xl font-black text-sm transition-all">2</button>
+                      <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-slate-50 rounded-xl font-black text-sm transition-all">3</button>
+                      <button className="p-2 border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 transition-all">
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
+              </>)}
             </motion.div>
           )}
     </>

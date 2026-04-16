@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Receipt, Zap, Droplets, ShieldCheck, Home } from 'lucide-react';
+import { X, Receipt, Zap, Droplets, ShieldCheck, Home, AlertTriangle, CheckCircle } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 
 interface InvoiceDetailModalProps {
   show: boolean;
@@ -11,6 +12,28 @@ interface InvoiceDetailModalProps {
 }
 
 export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading }: InvoiceDetailModalProps) => {
+  const [alerts, setAlerts] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (show && invoice?.room_id) {
+      const fetchAlert = async () => {
+        const { data } = await supabase
+          .from('risk_alerts')
+          .select('*')
+          .eq('room_id', invoice.room_id)
+          .order('detected_at', { ascending: false })
+          .limit(2);
+        
+        if (data && data.length > 0) {
+          setAlerts(data);
+        } else {
+          setAlerts([]);
+        }
+      };
+      fetchAlert();
+    }
+  }, [show, invoice]);
+
   if (!invoice) return null;
 
   return (
@@ -117,7 +140,9 @@ export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading }: I
                         </div>
                         <div>
                           <p className="font-bold text-sm text-slate-700">Tiền điện</p>
-                          <p className="text-[10px] font-bold text-slate-400">Tiêu thụ: {invoice.electricity_usage || 0} kwh</p>
+                          <p className="text-[10px] font-bold text-slate-400">
+                             Cũ: {invoice.electricity_old ?? '-'} → Mới: {invoice.electricity_new ?? '-'} (Tiêu thụ: {invoice.electricity_usage || 0} kwh)
+                          </p>
                         </div>
                       </div>
                       <span className="font-black text-slate-900">{(invoice.electricity_fee || 0).toLocaleString()} đ</span>
@@ -130,7 +155,9 @@ export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading }: I
                         </div>
                         <div>
                           <p className="font-bold text-sm text-slate-700">Tiền nước</p>
-                          <p className="text-[10px] font-bold text-slate-400">Tiêu thụ: {invoice.water_usage || 0} khối</p>
+                          <p className="text-[10px] font-bold text-slate-400">
+                             Cũ: {invoice.water_old ?? '-'} → Mới: {invoice.water_new ?? '-'} (Tiêu thụ: {invoice.water_usage || 0} khối)
+                          </p>
                         </div>
                       </div>
                       <span className="font-black text-slate-900">{(invoice.water_fee || 0).toLocaleString()} đ</span>
@@ -139,6 +166,60 @@ export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading }: I
               </div>
 
             </div>
+
+            {/* AI Alert Section */}
+            {alerts && alerts.length > 0 && (() => {
+              const hasHighRisk = alerts.some((a: any) => a.risk_level === 'cao');
+              const hasMedRisk = alerts.some((a: any) => a.risk_level === 'trung_binh');
+              const overallRisk = hasHighRisk ? 'cao' : hasMedRisk ? 'trung_binh' : 'thap';
+
+              return (
+                <div className="px-8 pb-6">
+                  <div className={`p-4 rounded-2xl border flex gap-4 shadow-sm ${
+                    overallRisk === 'cao' ? 'bg-red-50 border-red-200' :
+                    overallRisk === 'trung_binh' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'
+                  }`}>
+                    <div className="mt-1">
+                      {overallRisk !== 'thap' ? (
+                        <AlertTriangle className={`w-5 h-5 ${
+                          overallRisk === 'cao' ? 'text-red-600 animate-pulse' : 'text-orange-600'
+                        }`} />
+                      ) : (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      )}
+                    </div>
+                    <div>
+                      <h5 className={`font-bold text-sm ${
+                        overallRisk === 'cao' ? 'text-red-800' :
+                        overallRisk === 'trung_binh' ? 'text-orange-800' : 'text-green-800'
+                      }`}>
+                        {overallRisk !== 'thap' ? 'Cảnh báo' : 'Thông báo trạng thái'}
+                      </h5>
+                      <div className="mt-2 space-y-1">
+                        {alerts.map((alert: any) => (
+                          <p key={alert.id} className={`text-xs font-medium leading-relaxed ${
+                            overallRisk === 'cao' ? 'text-red-700' :
+                            overallRisk === 'trung_binh' ? 'text-orange-700' : 'text-green-700'
+                          }`}>
+                          
+                            {alert.details}
+                          </p>
+                        ))}
+                      </div>
+                      
+                      {overallRisk !== 'thap' && (
+                        <p className={`mt-3 text-[10px] font-bold uppercase tracking-widest ${
+                          overallRisk === 'cao' ? 'text-red-500' :
+                          overallRisk === 'trung_binh' ? 'text-orange-500' : 'text-green-500'
+                        }`}>
+                          Vui lòng liên hệ với chủ trọ để xử lý trước khi thanh toán!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Footer Summary */}
             <div className="p-6 border-t border-slate-100 bg-slate-900 flex items-center justify-between">

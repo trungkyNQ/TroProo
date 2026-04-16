@@ -10,9 +10,10 @@ import { TenantOverviewTab } from '../components/tenant/TenantOverviewTab';
 import { TenantRoomsTab } from '../components/tenant/TenantRoomsTab';
 import { TenantContractsTab } from '../components/tenant/TenantContractsTab';
 import { TenantAccountTab } from '../components/tenant/TenantAccountTab';
-import { TenantSupportModal } from '../components/tenant/TenantSupportModal';
+import { TenantSupportModal } from '../components/tenant/modals/TenantSupportModal';
 import { TenantInvoicesTab } from '../components/tenant/TenantInvoicesTab';
 import { InvoiceDetailModal } from '../components/tenant/modals/InvoiceDetailModal';
+import { TenantSupportTab } from '../components/tenant/TenantSupportTab';
 
 import { 
   Building,
@@ -32,7 +33,7 @@ import {
   PlusCircle,
   ChevronRight,
   MessageCircle, Search, Users, Phone, Video, Info, ImageIcon, Smile, 
-  Send, Mail, PhoneCall, Ban, ShieldAlert, Edit3, Settings,
+  Send, Mail, PhoneCall, Ban, Edit3, Settings,
   Maximize2, Layers, CheckCircle, Home, Zap, ShieldCheck, X,
   BadgeCheck, Lock as LockIcon, Camera, Clock, Filter, ArrowUpDown, MoreVertical, Construction
 } from 'lucide-react';
@@ -460,6 +461,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     { id: 'rooms', label: 'Phòng của tôi', icon: Bed },
     { id: 'contracts', label: 'Hợp đồng', icon: FileText },
     { id: 'invoices', label: 'Hóa đơn', icon: Wallet },
+    { id: 'support', label: 'Hỗ trợ', icon: Wrench },
     { id: 'messages', label: 'Tin nhắn', icon: MessageSquare, badge: 3 },
     { id: 'account', label: 'Tài khoản', icon: User },
   ];
@@ -517,29 +519,18 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
               tenantRooms={tenantRooms} 
               pendingContracts={pendingContracts} 
               loadingRooms={loadingRooms} 
-              loadingRequests={loadingRequests} 
-              supportRequestsData={supportRequestsData} 
-              monthlyElectric={monthlyElectric} 
+              monthlyElectric={monthlyElectric}
               signingContract={signingContract} 
               handleSignContract={handleSignContract} 
               handleRejectContract={handleRejectContract} 
-              fetchTenantRooms={fetchTenantRooms} 
-              fetchPendingContracts={fetchPendingContracts} 
-              fetchSupportRequests={fetchSupportRequests} 
-              setShowAddRequestModal={setShowAddRequestModal} 
-              setNewRequestForm={setNewRequestForm} 
               onNavigate={onNavigate} 
             />
           )}
 
           {activeTab === 'messages' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-1 overflow-hidden h-[calc(100vh-64px)] rounded-2xl border border-slate-200 shadow-sm"
-            >
+            <div className="flex flex-1 overflow-hidden h-[calc(100vh-64px)] rounded-2xl border border-slate-200 shadow-sm">
               <Messaging user={user} role="tenant" initialActiveChat={activeChatId} />
-            </motion.div>
+            </div>
           )}
 
           {activeTab === 'rooms' && (
@@ -571,6 +562,16 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
             />
           )}
 
+          {activeTab === 'support' && (
+            <TenantSupportTab
+              supportRequestsData={supportRequestsData}
+              loadingRequests={loadingRequests}
+              tenantRooms={tenantRooms}
+              setShowAddRequestModal={setShowAddRequestModal}
+              setNewRequestForm={setNewRequestForm}
+            />
+          )}
+
           {activeTab === 'account' && (
             <TenantAccountTab 
               user={user} 
@@ -592,7 +593,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
             />
           )}
 
-          {activeTab !== 'overview' && activeTab !== 'messages' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'account' && activeTab !== 'invoices' && (
+          {activeTab !== 'overview' && activeTab !== 'messages' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'account' && activeTab !== 'invoices' && activeTab !== 'support' && (
             <div className="flex flex-col items-center justify-center h-96 text-slate-400">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-300" />
               <h3 className="text-lg font-bold text-slate-900 mb-2">Tính năng đang phát triển</h3>

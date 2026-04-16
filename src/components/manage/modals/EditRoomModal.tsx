@@ -193,8 +193,10 @@ export const EditRoomModal = ({
                           <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
                           <input
                             type="number"
-                            value={form.initial_electricity_number}
-                            onChange={e => setForm(f => ({ ...f, initial_electricity_number: Number(e.target.value) }))}
+                            min="0"
+                            value={form.initial_electricity_number === 0 ? '' : form.initial_electricity_number}
+                            onChange={e => setForm(f => ({ ...f, initial_electricity_number: e.target.value === '' ? 0 : Number(e.target.value) }))}
+                            placeholder="0"
                             className="w-full rounded-2xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 p-4 pl-11 transition-all outline-none"
                           />
                         </div>
@@ -205,8 +207,10 @@ export const EditRoomModal = ({
                           <Droplets className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
                           <input
                             type="number"
-                            value={form.initial_water_number}
-                            onChange={e => setForm(f => ({ ...f, initial_water_number: Number(e.target.value) }))}
+                            min="0"
+                            value={form.initial_water_number === 0 ? '' : form.initial_water_number}
+                            onChange={e => setForm(f => ({ ...f, initial_water_number: e.target.value === '' ? 0 : Number(e.target.value) }))}
+                            placeholder="0"
                             className="w-full rounded-2xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 p-4 pl-11 transition-all outline-none"
                           />
                         </div>

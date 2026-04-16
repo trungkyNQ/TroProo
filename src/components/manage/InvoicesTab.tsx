@@ -17,12 +17,13 @@ interface InvoicesTabProps {
   invoicesData: any[];
   roomsData: any[];
   contractsData: any[];
+  hasRooms: boolean;
   onOpenCreateInvoice: (roomId?: string) => void;
   onCreateInvoice: (data: any) => void;
   onUpdateStatus: (id: string, status: string) => void;
 }
 
-export const InvoicesTab = ({ invoicesData, roomsData, contractsData, onOpenCreateInvoice, onCreateInvoice, onUpdateStatus }: InvoicesTabProps) => {
+export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, onOpenCreateInvoice, onCreateInvoice, onUpdateStatus }: InvoicesTabProps) => {
   const invoices = invoicesData.map(inv => ({
     id: inv.id,
     tenant: inv.profiles?.full_name || 'N/A',
@@ -37,6 +38,13 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, onOpenCrea
                  inv.status === 'unpaid' ? 'bg-orange-100 text-orange-700' : 
                  inv.status === 'pending_verification' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
   }));
+
+  const stats = [
+    { label: 'Chưa thanh toán', value: invoicesData.filter(inv => inv.status === 'unpaid').length, sub: 'Cần đốc thúc', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-100' },
+    { label: 'Đã thanh toán', value: invoicesData.filter(inv => inv.status === 'paid').length, sub: 'Tháng này', icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-100' },
+    { label: 'Chờ xác nhận', value: invoicesData.filter(inv => inv.status === 'pending_verification').length, sub: 'Giao dịch mới', icon: RefreshCw, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { label: 'Quá hạn', value: invoicesData.filter(inv => inv.status === 'overdue').length, sub: 'Cần xử lý', icon: Ban, color: 'text-red-600', bg: 'bg-red-100' }
+  ];
 
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -88,29 +96,50 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, onOpenCrea
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 font-display">Quản lý hóa đơn</h2>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 font-display">Quản lý Hóa Đơn</h2>
                   <p className="text-slate-500 font-medium">Theo dõi tình trạng thanh toán tiền phòng và dịch vụ.</p>
                 </div>
-                <button 
-                  onClick={() => onOpenCreateInvoice()}
-                  className="bg-primary text-white font-black uppercase tracking-widest text-xs py-4 px-8 rounded-2xl hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Lập hóa đơn mới
-                </button>
+
               </div>
 
+              {/* Empty state when no rooms yet */}
+              {!hasRooms ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200">
+                  <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-6">
+                    <FileText className="w-10 h-10" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có phòng nào</h3>
+                  <p className="text-slate-500 max-w-sm">Hóa đơn sẽ xuất hiện sau khi bạn thêm phòng và gán người thuê.</p>
+                </div>
+              ) : (<>
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                {stats.map((stat, i) => (
+                  <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-slate-500 text-xs font-black uppercase tracking-widest">{stat.label}</span>
+                      <div className={`${stat.bg} ${stat.color} p-2 rounded-xl`}>
+                        <stat.icon className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="text-3xl font-black text-slate-900 font-display">{stat.value}</div>
+                    <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-tighter">{stat.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+
               {dueRooms.length > 0 && (
-                <div className="bg-white border-2 border-primary/20 rounded-3xl overflow-hidden">
-                  <div className="bg-primary/5 p-6 border-b border-primary/10 flex items-center justify-between">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+                  <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                     <div>
-                      <h3 className="text-primary font-black text-xl flex items-center gap-2 font-display">
-                        <Zap className="w-6 h-6" />
+                      <h3 className="text-slate-900 font-black text-xl flex items-center gap-2 font-display">
+                        <Zap className="w-6 h-6 text-primary" />
                         Chốt hóa đơn nhanh
                       </h3>
                       <p className="text-slate-500 text-sm font-medium">Có {dueRooms.length} phòng đến hạn thu tiền tháng này.</p>
                     </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-white px-4 py-2 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
                       <Clock className="w-4 h-4" />
                       Hạn chốt: {new Date().toLocaleDateString('vi-VN')}
                     </div>
@@ -230,6 +259,45 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, onOpenCrea
               )}
 
               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4">
+                  <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Bộ lọc:</span>
+                  <div className="flex gap-2">
+                    {[
+                      { id: 'all', label: 'Tất cả' },
+                      { id: 'unpaid', label: 'Chưa thanh toán' },
+                      { id: 'paid', label: 'Đã thanh toán' },
+                      { id: 'overdue', label: 'Quá hạn' },
+                    ].map((filter) => (
+                      <button 
+                        key={filter.id}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                          filter.id === 'all' 
+                            ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                            : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button className="p-2.5 border border-slate-200 rounded-xl text-slate-400 hover:text-primary hover:border-primary transition-all">
+                      <Filter className="w-5 h-5" />
+                    </button>
+                    <button className="p-2.5 border border-slate-200 rounded-xl text-slate-400 hover:text-primary hover:border-primary transition-all">
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                {invoices.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-6">
+                      <FileText className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có hóa đơn nào</h3>
+                    <p className="text-slate-500 max-w-sm mb-6">Hóa đơn sẽ xuất hiện ở đây khi bạn hoặc hệ thống tạo mới.</p>
+                  </div>
+                ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -292,7 +360,9 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, onOpenCrea
                     </tbody>
                   </table>
                 </div>
+                )}
               </div>
+              </>)}
             </motion.div>
           )}
     </>

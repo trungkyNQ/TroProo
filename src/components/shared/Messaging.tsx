@@ -20,8 +20,10 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
       setActiveChat(initialActiveChat);
     }
   }, [initialActiveChat]);
+
   const [conversations, setConversations] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -35,63 +37,66 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
 
   // Fetch conversations
   useEffect(() => {
-    if (!user) return;
-    
     const fetchConversations = async () => {
-      let { data, error } = await supabase
-        .from('conversations')
-        .select('id, updated_at, landlord_id, tenant_id')
-        .or(`landlord_id.eq.${user.id},tenant_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false });
+      try {
+        setLoading(true);
+        let { data, error } = await supabase
+          .from('conversations')
+          .select('id, updated_at, landlord_id, tenant_id')
+          .or(`landlord_id.eq.${user.id},tenant_id.eq.${user.id}`)
+          .order('updated_at', { ascending: false });
 
-      if (error) {
-        console.error('Lỗi khi tải danh sách chat:', error);
-      }
-
-      if (data) {
-        // Collect counterpart IDs to fetch profiles
-        const targetIds = data.map((c: any) => c.landlord_id === user.id ? c.tenant_id : c.landlord_id);
-        
-        let profileMap: Record<string, any> = {};
-        if (targetIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .in('id', targetIds);
-            
-          if (profiles) {
-            profiles.forEach(p => {
-              profileMap[p.id] = p;
-            });
-          }
+        if (error) {
+          console.error('Lỗi khi tải danh sách chat:', error);
         }
 
-        setConversations(data.map((c: any) => {
-          const targetId = c.landlord_id === user.id ? c.tenant_id : c.landlord_id;
-          const userProfile = profileMap[targetId];
+        if (data) {
+          // Collect counterpart IDs to fetch profiles
+          const targetIds = data.map((c: any) => c.landlord_id === user.id ? c.tenant_id : c.landlord_id);
           
-          return {
-            id: c.id,
-            name: userProfile?.full_name || (role === 'landlord' ? 'Khách thuê' : 'Chủ phòng'),
-            avatar: userProfile?.avatar_url,
-            time: new Date(c.updated_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-            unread: 0,
-            online: true,
-            lastMessage: 'Nhấn để xem tin nhắn...'
-          };
-        }));
-        // 4. Nếu có initialActiveChat, ưu tiên nó. Nếu chưa có activeChat nào, chọn chat đầu tiên.
-        if (data.length > 0) {
-          if (initialActiveChat) {
-            setActiveChat(initialActiveChat);
-          } else if (!activeChat) {
-            setActiveChat(data[0].id);
+          let profileMap: Record<string, any> = {};
+          if (targetIds.length > 0) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('id, full_name, avatar_url')
+              .in('id', targetIds);
+              
+            if (profiles) {
+              profiles.forEach(p => {
+                profileMap[p.id] = p;
+              });
+            }
+          }
+
+          setConversations(data.map((c: any) => {
+            const targetId = c.landlord_id === user.id ? c.tenant_id : c.landlord_id;
+            const userProfile = profileMap[targetId];
+            
+            return {
+              id: c.id,
+              name: userProfile?.full_name || (role === 'landlord' ? 'Khách thuê' : 'Chủ phòng'),
+              avatar: userProfile?.avatar_url,
+              time: new Date(c.updated_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              unread: 0,
+              online: true,
+              lastMessage: 'Nhấn để xem tin nhắn...'
+            };
+          }));
+          // 4. Nếu có initialActiveChat, ưu tiên nó. Nếu chưa có activeChat nào, chọn chat đầu tiên.
+          if (data.length > 0) {
+            if (initialActiveChat) {
+              setActiveChat(initialActiveChat);
+            } else if (!activeChat) {
+              setActiveChat(data[0].id);
+            }
           }
         }
+      } finally {
+        setLoading(false);
       }
     };
     fetchConversations();
-  }, [user, role]);
+  }, [user, role, initialActiveChat]);
 
   // Fetch messages and subscribe
   useEffect(() => {
@@ -167,11 +172,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-1 overflow-hidden h-[calc(100vh-64px)] w-full"
-    >
+    <div className="flex flex-1 overflow-hidden h-[calc(100vh-64px)] w-full">
       {/* Conversation List */}
       <aside className="w-full max-w-[360px] flex flex-col border-r border-slate-200 bg-white shrink-0">
         <div className="p-6 border-b border-slate-100">
@@ -207,7 +208,19 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 ? (
+          {loading ? (
+            <div className="p-6 space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-4 animate-pulse">
+                  <div className="w-12 h-12 rounded-full bg-slate-100" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                    <div className="h-2 bg-slate-50 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : conversations.length === 0 ? (
             <div className="p-6 text-center text-sm font-bold text-slate-400">
               {role === 'landlord' ? 'Chưa có khách thuê nào liên hệ.' : 'Chưa có phòng nào được phản hồi.'}
             </div>
@@ -368,6 +381,10 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
               </div>
             </footer>
           </>
+        ) : loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50/50">
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-slate-100"><MessageCircle className="w-10 h-10 text-slate-300" /></div>
@@ -376,8 +393,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
           </div>
         )}
       </main>
-
-    </motion.div>
+    </div>
   );
 };
 

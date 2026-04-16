@@ -58,7 +58,7 @@ export const TenantsTab = ({ contractsData, setActiveTab, loading = false }: Ten
     <>
       <div className="flex flex-col gap-8">
         <div>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 font-display">Người thuê ({tenants.length})</h2>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 font-display">Quản lý Người Thuê ({tenants.length})</h2>
           <p className="text-slate-500 font-medium">Theo dõi thông tin và hồ sơ của người thuê hiện tại.</p>
         </div>
 

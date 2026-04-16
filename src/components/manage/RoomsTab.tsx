@@ -113,14 +113,14 @@ export const RoomsTab = ({
           ))}
         </div>
       ) : rooms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50 mt-4">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 shadow-sm">
-            <Home className="w-12 h-12 opacity-80" />
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200 px-6 mt-4">
+          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-6">
+            <Home className="w-10 h-10" />
           </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-3 font-display">Bạn chưa có phòng nào!</h3>
-          <p className="text-slate-500 max-w-md mb-8 font-medium">Chào mừng bạn đến với hệ thống quản lý. Hãy bắt đầu bằng việc tạo căn phòng đầu tiên cho khu trọ của bạn nhé.</p>
-          <button onClick={openAddRoomModal} className="bg-primary text-white font-black uppercase tracking-widest text-sm px-8 py-4 rounded-xl hover:bg-primary-hover transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-100 hover:-translate-y-1">
-            <Plus className="w-5 h-5" />
+          <h3 className="text-xl font-bold text-slate-900 mb-2 font-display">Bạn chưa có phòng nào!</h3>
+          <p className="text-slate-500 max-w-sm mb-8 font-medium">Chào mừng bạn đến với hệ thống quản lý. Hãy bắt đầu bằng việc tạo căn phòng đầu tiên cho khu trọ của bạn nhé.</p>
+          <button onClick={openAddRoomModal} className="bg-primary text-white font-black uppercase tracking-widest text-xs py-4 px-8 rounded-2xl hover:bg-primary-hover transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-100 hover:-translate-y-1">
+            <Plus className="w-4 h-4" />
             Thêm phòng đầu tiên
           </button>
         </div>

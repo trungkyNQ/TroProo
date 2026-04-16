@@ -13,12 +13,14 @@ import { AddListingModal } from '../components/manage/modals/AddListingModal';
 import { RoomDetailModal } from '../components/manage/modals/RoomDetailModal';
 import { DeleteConfirmModal } from '../components/manage/modals/DeleteConfirmModal';
 import { CreateInvoiceModal } from '../components/manage/modals/CreateInvoiceModal';
+import { RiskAlerts } from '../components/RiskAnalysis/RiskAlerts';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import Messaging from '../components/shared/Messaging';
 import { supabase } from '../lib/supabase';
+import { duDoanRuiRoDienNuoc } from '../lib/riskAnalysis';
 import { 
   LayoutDashboard, 
   Home as HomeIcon, 
@@ -152,6 +154,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
   // Add Listing Modal states
   const [showAddListingModal, setShowAddListingModal] = useState(false);
   const [addingListing, setAddingListing] = useState(false);
+  const [editingListingId, setEditingListingId] = useState<string | null>(null);
   const [listingForm, setListingForm] = useState({
     title: '', description: '', price: '', area: '', type: 'Phòng trọ',
     location: '', street: '', image_url: '',
@@ -337,6 +340,29 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       
       setShowCreateInvoiceModal(false);
       await fetchInvoices(); // Only need to refresh invoices
+      
+      // Chạy nền thuật toán dự đoán AI mỗi khi chốt Hóa đơn xong
+      if (invoiceData.room_id) {
+        // Gom lịch sử CŨ của phòng này
+        const lichSuChoPhong = invoicesData
+          .filter(inv => inv.room_id === invoiceData.room_id)
+          .sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .map(inv => ({
+            thang: inv.created_at,
+            soDien: inv.electricity_usage || 0,
+            soNuoc: inv.water_usage || 0
+          }));
+        
+        // Kẹp thêm tháng GIỮA TẠI (vừa chốt xong)
+        lichSuChoPhong.push({
+          thang: new Date().toISOString(),
+          soDien: invoiceData.electricity_usage || 0,
+          soNuoc: invoiceData.water_usage || 0
+        });
+
+        // Push qua bộ vi xử lí AI (Chạy không đồng bộ để không chặn luồng update UI)
+        duDoanRuiRoDienNuoc(invoiceData.room_id, lichSuChoPhong).catch(console.error);
+      }
     } catch (err) {
       console.error('Error creating invoice:', err);
       alert('Không thể tạo hóa đơn');
@@ -457,12 +483,12 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
     }
   };
 
-  // Tạo bài đăng mới - CHỈ insert vào listings, KHÔNG tạo room
+  // Tạo hoặc Cập nhật bài đăng
   const handleAddListing = async () => {
     if (!listingForm.title || !listingForm.price) return;
     setAddingListing(true);
     try {
-      const { error } = await supabase.from('listings').insert({
+      const payload = {
         owner_id: user?.id,
         title: listingForm.title,
         description: listingForm.description || null,
@@ -479,17 +505,57 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         deposit: listingForm.deposit ? Number(listingForm.deposit) : Number(listingForm.price),
         is_active: true,
         approval_status: 'approved'
-      });
-      if (error) throw error;
+      };
+
+      if (editingListingId) {
+        const { error } = await supabase.from('listings').update(payload).eq('id', editingListingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('listings').insert(payload);
+        if (error) throw error;
+      }
+
       setShowAddListingModal(false);
+      setEditingListingId(null);
       setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' });
       await fetchDashboardData();
     } catch (err) {
-      console.error('Error adding listing:', err);
-      alert('Đã có lỗi khi tạo bài đăng.');
+      console.error('Error adding/updating listing:', err);
+      alert('Đã có lỗi khi lưu bài đăng.');
     } finally {
       setAddingListing(false);
     }
+  };
+
+  const handleDeleteListing = async (id: string) => {
+    if (!window.confirm('Bạn có chắc muốn xóa bài đăng này? Các phòng đang liên kết sẽ bị đặt thành trống cục bộ nhưng không bị xóa.')) return;
+    try {
+      const { error } = await supabase.from('listings').delete().eq('id', id);
+      if (error) throw error;
+      await fetchDashboardData();
+    } catch (err) {
+      console.error('Error deleting listing:', err);
+      alert('Đã có lỗi khi xóa bài đăng.');
+    }
+  };
+
+  const openEditListingModal = (listing: any) => {
+    setEditingListingId(listing.id);
+    setListingForm({
+      title: listing.title || '',
+      description: listing.description || '',
+      price: listing.price?.toString() || '',
+      area: listing.area?.toString() || '',
+      type: listing.type || 'Phòng trọ',
+      location: listing.location || '',
+      street: listing.street || '',
+      image_url: listing.image_url || (listing.images && listing.images[0]) || '',
+      electricity_price: listing.electricity_price || 3500,
+      water_price: listing.water_price || 20000,
+      service_fee: listing.service_fee || 150000,
+      deposit: listing.deposit?.toString() || ''
+    });
+    setShowAddListingModal(true);
   };
 
   const handleUpdateSupportRequest = async (id: string, newStatus: string) => {
@@ -562,12 +628,29 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
     setFoundTenant(null);
     setNewRoomForm(f => ({ ...f, tenant_id: '' }));
     try {
-      // Search in profiles table by phone
-      const { data: profile, error } = await supabase
+      // Normalize phone: convert leading 0 to +84 (Vietnamese format)
+      let rawPhone = searchPhone.trim();
+      if (rawPhone.startsWith('0')) {
+        rawPhone = '+84' + rawPhone.slice(1);
+      }
+
+      // Try exact match first, then also try with the original input
+      let { data: profile, error } = await supabase
         .from('profiles')
         .select('id, full_name, phone, avatar_url, role')
-        .eq('phone', searchPhone.trim())
+        .eq('phone', rawPhone)
         .single();
+
+      // Fallback: try original input if normalized form not found
+      if ((error || !profile) && rawPhone !== searchPhone.trim()) {
+        const fallback = await supabase
+          .from('profiles')
+          .select('id, full_name, phone, avatar_url, role')
+          .eq('phone', searchPhone.trim())
+          .single();
+        profile = fallback.data;
+        error = fallback.error;
+      }
 
       if (error || !profile) {
         setSearchError('Không tìm thấy người dùng với số điện thoại này. Vui lòng kiểm tra lại.');
@@ -731,6 +814,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
     { id: 'tenants', label: 'Người thuê', icon: Users },
     { id: 'contracts', label: 'Hợp đồng', icon: FileText },
     { id: 'invoices', label: 'Hóa đơn', icon: Wallet },
+    { id: 'risk_alerts', label: 'Cảnh báo', icon: ShieldAlert },
     { id: 'support', label: 'Yêu cầu hỗ trợ', icon: Wrench },
     { id: 'listings', label: 'Bài đăng', icon: ImageIcon },
     { id: 'messages', label: 'Tin nhắn', icon: MessageSquare },
@@ -826,6 +910,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
               invoicesData={invoicesData} 
               roomsData={roomsData}
               contractsData={contractsData}
+              hasRooms={roomsData.length > 0}
               onOpenCreateInvoice={(roomId: string | null = null) => {
                 setPreSelectedRoomForInvoice(roomId);
                 setShowCreateInvoiceModal(true);
@@ -835,15 +920,27 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
             />
           )}
 
+          {activeTab === 'risk_alerts' && (
+            <RiskAlerts onNavigate={onNavigate} hasRooms={roomsData.length > 0} role="landlord" />
+          )}
+
           {activeTab === 'listings' && (
             <ListingsTab
               listingsData={listingsData}
-              setShowAddListingModal={setShowAddListingModal}
+              setShowAddListingModal={(v) => {
+                if (v) {
+                  setEditingListingId(null);
+                  setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' });
+                }
+                setShowAddListingModal(v);
+              }}
+              onEditListing={openEditListingModal}
+              onDeleteListing={handleDeleteListing}
             />
           )}
 
           {activeTab === 'contracts' && (
-            <ContractsTab contractsData={contractsData} />
+            <ContractsTab contractsData={contractsData} roomsData={roomsData} />
           )}
 
           {activeTab === 'support' && (
@@ -869,7 +966,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
             />
           )}
 
-          {activeTab !== 'overview' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'messages' && activeTab !== 'account' && activeTab !== 'tenants' && activeTab !== 'invoices' && activeTab !== 'listings' && activeTab !== 'support' && (
+          {activeTab !== 'overview' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'messages' && activeTab !== 'account' && activeTab !== 'tenants' && activeTab !== 'invoices' && activeTab !== 'listings' && activeTab !== 'support' && activeTab !== 'risk_alerts' && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-6">
                 <Construction className="w-10 h-10" />
@@ -946,6 +1043,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         onDelete={handleDeleteRoom}
         onNavigateToTab={setActiveTab}
         onCreateListing={(room) => {
+          setEditingListingId(null);
           setListingForm(f => ({
             ...f,
             title: `Phòng ${room.title} - ${room.type}`,

@@ -19,19 +19,9 @@ interface MessagesTabProps {
 }
 
 export const MessagesTab = ({ user }: MessagesTabProps) => {
-  const activeTab = 'messages';
-
   return (
-    <>
-      {activeTab === 'messages' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-1 overflow-hidden h-[calc(100vh-64px)] rounded-2xl border border-slate-200 shadow-sm"
-            >
-              <Messaging user={user} role="landlord" />
-            </motion.div>
-          )}
-    </>
+    <div className="flex flex-1 overflow-hidden h-[calc(100vh-64px)] rounded-2xl border border-slate-200 shadow-sm">
+      <Messaging user={user} role="landlord" />
+    </div>
   );
 };

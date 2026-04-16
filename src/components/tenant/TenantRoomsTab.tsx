@@ -32,7 +32,7 @@ export const TenantRoomsTab = ({ tenantRooms, loadingRooms, onNavigate, handleSt
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : tenantRooms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200 px-6">
           <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-6">
             <Home className="w-10 h-10" />
           </div>

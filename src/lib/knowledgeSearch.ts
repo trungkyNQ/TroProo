@@ -1,6 +1,6 @@
 // ============================================================
 // PROBOT KNOWLEDGE SEARCH ENGINE
-// Tìm kiếm và định dạng dữ liệu knowledge base для Gemini RAG
+// Tìm kiếm và định dạng dữ liệu
 // ============================================================
 
 import { KNOWLEDGE_BASE, DistrictKnowledge } from './knowledgeBase';
