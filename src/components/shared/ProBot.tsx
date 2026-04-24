@@ -200,9 +200,9 @@ function ChatMessage({ msg, onNavigate }: { msg: Message, onNavigate?: (page: st
 
 const SUGGESTIONS = [
   'Tìm phòng 3 triệu Hải Châu',
-  'Hải Châu nên ở đâu?',
-  'Tìm studio dưới 5 triệu',
-  'Gò Vấp có phòng nào phù hợp sinh viên?',
+  'Hải Châu nên ở đường nào?',
+  'Học Đại Học Duy Tân nên ở đâu?',
+  'Tìm phòng tại đường Lạc Long Quân',
 ];
 
 // ─────────────────────────────────────────────────────────────

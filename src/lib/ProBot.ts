@@ -185,7 +185,7 @@ export async function callGemini(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash',
         contents,
         config: { systemInstruction, temperature: 0.7 },
       });

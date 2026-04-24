@@ -130,12 +130,17 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
         filter: `conversation_id=eq.${activeChat}` 
       }, (payload) => {
         const newMsg = payload.new;
-        setMessages(prev => [...prev, {
-          id: newMsg.id,
-          text: newMsg.content,
-          isMe: newMsg.sender_id === user?.id,
-          time: new Date(newMsg.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-        }]);
+        setMessages(prev => {
+          // Tránh trùng lặp nếu tin nhắn đã được thêm qua Optimistic Update hoặc đã tồn tại
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          
+          return [...prev, {
+            id: newMsg.id,
+            text: newMsg.content,
+            isMe: newMsg.sender_id === user?.id,
+            time: new Date(newMsg.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+          }];
+        });
       })
       .subscribe();
 
@@ -148,18 +153,49 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
     if (e) e.preventDefault();
     if (!newMessage.trim() || !activeChat || !user) return;
 
-    const tempMsg = newMessage.trim();
+    const content = newMessage.trim();
     setNewMessage('');
 
-    const { error } = await supabase
+    // 1. Tạo tin nhắn tạm thời (Optimistic Update) để hiển thị ngay lập tức
+    const optimisticId = `temp-${Date.now()}`;
+    const optimisticMsg = {
+      id: optimisticId,
+      text: content,
+      isMe: true,
+      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      isPending: true
+    };
+
+    setMessages(prev => [...prev, optimisticMsg]);
+
+    // 2. Gửi dữ liệu thật lên Database
+    const { data, error } = await supabase
       .from('messages')
       .insert({
         conversation_id: activeChat,
         sender_id: user.id,
-        content: tempMsg
-      });
+        content: content
+      })
+      .select()
+      .single();
 
-    if (!error) {
+    if (error) {
+      console.error('Lỗi khi gửi tin nhắn:', error);
+      // Xóa tin nhắn tạm nếu bị lỗi
+      setMessages(prev => prev.filter(m => m.id !== optimisticId));
+      return;
+    }
+
+    if (data) {
+      // 3. Thay thế tin nhắn tạm bằng tin nhắn thật từ DB
+      setMessages(prev => prev.map(m => m.id === optimisticId ? {
+        id: data.id,
+        text: data.content,
+        isMe: true,
+        time: new Date(data.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      } : m));
+
+      // Cập nhật thời điểm tương tác mới nhất của hội thoại
       await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', activeChat);
     }
   };

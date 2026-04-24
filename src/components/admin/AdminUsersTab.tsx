@@ -41,63 +41,90 @@ export const AdminUsersTab = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 shrink-0">
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
-                       onClick={() => setUserFilter('all')}>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Tổng cộng</p>
-                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.total}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
-                       onClick={() => setUserFilter('landlord')}>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Chủ trọ</p>
-                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.landlord}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
-                       onClick={() => setUserFilter('tenant')}>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Người thuê</p>
-                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.tenant}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-primary transition-all group"
-                       onClick={() => setUserFilter('admin')}>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary">Quản trị</p>
-                    <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.admin}</p>
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 shrink-0">
+          <div className={`bg-white p-6 rounded-xl border flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-all ${userFilter === 'all' ? 'border-primary ring-1 ring-primary' : 'border-slate-200'}`}
+               onClick={() => setUserFilter('all')}>
+            <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 font-medium whitespace-nowrap uppercase tracking-tighter">Tổng cộng</p>
+              <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.total}</p>
+            </div>
+          </div>
+          
+          <div className={`bg-white p-6 rounded-xl border flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-all ${userFilter === 'landlord' ? 'border-orange-500 ring-1 ring-orange-500' : 'border-slate-200'}`}
+               onClick={() => setUserFilter('landlord')}>
+            <div className="p-3 bg-orange-100 text-orange-600 rounded-lg">
+              <Home className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 font-medium whitespace-nowrap uppercase tracking-tighter">Chủ trọ</p>
+              <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.landlord}</p>
+            </div>
+          </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm flex flex-col flex-1">
-                  <div className="flex border-b border-slate-200 px-6 shrink-0">
-                    {['all', 'landlord', 'tenant', 'admin'].map((filter) => (
-                      <button 
-                        key={filter}
-                        onClick={() => setUserFilter(filter as any)}
-                        className={`py-4 px-4 border-b-2 font-bold text-sm whitespace-nowrap capitalize ${userFilter === filter ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 font-medium'}`}
-                      >
-                        {filter === 'all' ? 'Tất cả' : filter === 'landlord' ? 'Chủ trọ' : filter === 'tenant' ? 'Người thuê' : 'Quản trị'}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="overflow-x-auto min-h-[300px] flex-1">
-                    {loading ? (
-                      <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-                        <p>Đang tải danh sách...</p>
-                      </div>
-                    ) : currentUsers.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-64 text-slate-400 text-center p-8">
-                        <Users className="w-12 h-12 mb-4 text-slate-200 mx-auto" />
-                        <p>Không tìm thấy thành viên nào phù hợp.</p>
-                      </div>
-                    ) : (
-                      <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Người dùng</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vai trò</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Liên hệ</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày tham gia</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
-                          </tr>
-                        </thead>
+          <div className={`bg-white p-6 rounded-xl border flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-all ${userFilter === 'tenant' ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-slate-200'}`}
+               onClick={() => setUserFilter('tenant')}>
+            <div className="p-3 bg-emerald-100 text-emerald-600 rounded-lg">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 font-medium whitespace-nowrap uppercase tracking-tighter">Người thuê</p>
+              <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.tenant}</p>
+            </div>
+          </div>
+
+          <div className={`bg-white p-6 rounded-xl border flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-all ${userFilter === 'admin' ? 'border-purple-500 ring-1 ring-purple-500' : 'border-slate-200'}`}
+               onClick={() => setUserFilter('admin')}>
+            <div className="p-3 bg-purple-100 text-purple-600 rounded-lg">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 font-medium whitespace-nowrap uppercase tracking-tighter">Quản trị</p>
+              <p className="text-2xl font-black text-slate-900">{loading ? '-' : userStats.admin}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm flex flex-col flex-1 min-h-0">
+          <div className="flex border-b border-slate-200 px-6 shrink-0 bg-slate-50/50">
+            {['all', 'landlord', 'tenant', 'admin'].map((filter) => (
+              <button 
+                key={filter}
+                onClick={() => setUserFilter(filter as any)}
+                className={`py-4 px-6 border-b-2 font-black text-sm whitespace-nowrap uppercase transition-all ${
+                  userFilter === filter 
+                    ? 'border-primary text-primary' 
+                    : 'border-transparent text-slate-500 hover:text-slate-700 font-bold'
+                }`}
+              >
+                {filter === 'all' ? 'Tất cả' : filter === 'landlord' ? 'Chủ trọ' : filter === 'tenant' ? 'Người thuê' : 'Quản trị'}
+              </button>
+            ))}
+          </div>
+          <div className="overflow-auto flex-1">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400">
+                <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+                <p className="font-bold">Đang tải danh sách...</p>
+              </div>
+            ) : currentUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400 text-center p-8">
+                <Users className="w-12 h-12 mb-4 text-slate-200 mx-auto" />
+                <p className="font-bold">Không tìm thấy thành viên nào phù hợp.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-10 text-slate-500 text-xs font-black uppercase tracking-wider">
+                    <th className="px-6 py-4">Người dùng</th>
+                    <th className="px-6 py-4">Vai trò</th>
+                    <th className="px-6 py-4">Liên hệ</th>
+                    <th className="px-6 py-4">Ngày tham gia</th>
+                    <th className="px-6 py-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
                         <tbody className="divide-y divide-slate-200">
                           {currentUsers.map((user) => (
                             <tr key={user.id} className="hover:bg-slate-50 transition-colors">

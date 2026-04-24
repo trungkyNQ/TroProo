@@ -12,8 +12,8 @@ CREATE TABLE public.contracts (
   status text DEFAULT 'active'::text,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT contracts_pkey PRIMARY KEY (id),
-  CONSTRAINT contracts_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id),
   CONSTRAINT contracts_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.rooms(id),
+  CONSTRAINT contracts_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id),
   CONSTRAINT contracts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.conversations (
@@ -43,8 +43,8 @@ CREATE TABLE public.invoices (
   electricity_usage integer DEFAULT 0,
   water_usage integer DEFAULT 0,
   CONSTRAINT invoices_pkey PRIMARY KEY (id),
-  CONSTRAINT invoices_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id),
   CONSTRAINT invoices_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.rooms(id),
+  CONSTRAINT invoices_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id),
   CONSTRAINT invoices_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.listings (
@@ -71,8 +71,8 @@ CREATE TABLE public.listings (
   approval_status text DEFAULT 'approved'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT listings_pkey PRIMARY KEY (id),
-  CONSTRAINT listings_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id),
-  CONSTRAINT listings_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.rooms(id)
+  CONSTRAINT listings_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.rooms(id),
+  CONSTRAINT listings_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -131,6 +131,7 @@ CREATE TABLE public.products (
   warranty text,
   address_summary text,
   stock integer DEFAULT 1,
+  approval_status text DEFAULT 'pending'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
   CONSTRAINT products_pkey PRIMARY KEY (id),
   CONSTRAINT products_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES auth.users(id)
 );
@@ -140,6 +141,7 @@ CREATE TABLE public.profiles (
   phone text,
   role text CHECK (role = ANY (ARRAY['landlord'::text, 'tenant'::text, 'admin'::text])),
   avatar_url text,
+  created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   id_card_number text,
   id_card_date date,
@@ -166,6 +168,16 @@ CREATE TABLE public.reports (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT reports_pkey PRIMARY KEY (id),
   CONSTRAINT reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.risk_alerts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  room_id uuid NOT NULL,
+  risk_type text CHECK (risk_type = ANY (ARRAY['dien'::text, 'nuoc'::text])),
+  risk_level text CHECK (risk_level = ANY (ARRAY['thap'::text, 'trung_binh'::text, 'cao'::text])),
+  details text NOT NULL,
+  detected_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT risk_alerts_pkey PRIMARY KEY (id),
+  CONSTRAINT risk_alerts_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.rooms(id)
 );
 CREATE TABLE public.rooms (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

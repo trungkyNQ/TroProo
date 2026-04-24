@@ -17,7 +17,9 @@ import {
   Shield,
   UserCheck,
   Edit,
-  ShoppingCart
+  ShoppingCart,
+  ShieldAlert,
+  FileSignature
 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Page } from '../components/layout/Header';
@@ -29,6 +31,9 @@ import { AdminDashboardTab } from '../components/admin/AdminDashboardTab';
 import { AdminListingsTab } from '../components/admin/AdminListingsTab';
 import { AdminUsersTab } from '../components/admin/AdminUsersTab';
 import { AdminReportsTab } from '../components/admin/AdminReportsTab';
+import { AdminRiskTab } from '../components/admin/AdminRiskTab';
+import { AdminOrdersTab } from '../components/admin/AdminOrdersTab';
+import { AdminContractsTab } from '../components/admin/AdminContractsTab';
 
 
 interface AdminPageProps {
@@ -43,6 +48,7 @@ interface Profile {
   phone: string;
   role: string;
   avatar_url: string;
+  created_at: string;
 }
 
 interface Listing {
@@ -83,6 +89,20 @@ interface Report {
   reporterInfo?: Profile;
 }
 
+interface RiskAlert {
+  id: string;
+  room_id: string;
+  risk_type: 'dien' | 'nuoc';
+  risk_level: 'thap' | 'trung_binh' | 'cao';
+  details: string;
+  detected_at: string;
+  roomInfo?: {
+    id: string;
+    title: string;
+    location?: string;
+  };
+}
+
 interface OverallStats {
   totalListings: number;
   totalUsers: number;
@@ -91,10 +111,23 @@ interface OverallStats {
   totalProducts: number;
 }
 
-type AdminView = 'dashboard' | 'listings' | 'users' | 'reports';
+type AdminView = 'dashboard' | 'listings' | 'users' | 'reports' | 'risks' | 'orders' | 'contracts';
 
 export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
-  const [currentView, setCurrentView] = useState<AdminView>('listings');
+  const getInitialView = (): AdminView => {
+    const params = new URLSearchParams(window.location.search);
+    const urlView = params.get('view') as AdminView;
+    const validViews: AdminView[] = ['dashboard', 'listings', 'users', 'reports', 'risks', 'orders', 'contracts'];
+    
+    if (urlView && validViews.includes(urlView)) return urlView;
+    
+    const savedView = localStorage.getItem('last_admin_view') as AdminView;
+    if (savedView && validViews.includes(savedView)) return savedView;
+    
+    return 'dashboard';
+  };
+
+  const [currentView, setCurrentView] = useState<AdminView>(getInitialView());
   
   // Listings State
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('approved');
@@ -138,6 +171,15 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   const [reportsList, setReportsList] = useState<Report[]>([]);
   const [reportFilter, setReportFilter] = useState<'all' | 'pending' | 'resolved'>('all');
 
+  // Risk Alerts State
+  const [riskAlerts, setRiskAlerts] = useState<RiskAlert[]>([]);
+
+  // Orders State
+  const [ordersList, setOrdersList] = useState<any[]>([]);
+
+  // Contracts State
+  const [contractsList, setContractsList] = useState<any[]>([]);
+
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -167,27 +209,45 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   // Navigation & Highlight State
   const [highlightedListingId, setHighlightedListingId] = useState<string | null>(null);
 
+  // Consolidated Initial Load
   useEffect(() => {
-    if (currentView === 'dashboard') {
-      fetchOverallStats();
-    } else if (currentView === 'users') {
-      fetchUsers();
-    } else if (currentView === 'reports') {
-      fetchReports();
-    }
-  }, [currentView]);
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([
+          fetchOverallStats(),
+          fetchListings(),
+          fetchProducts(),
+          fetchUsers(),
+          fetchReports(),
+          fetchRiskAlerts(),
+          fetchOrders(),
+          fetchContracts()
+        ]);
+      } catch (error) {
+        console.error('Error fetching initial admin data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    if (currentView === 'listings') {
-      if (listingMode === 'room') fetchListings();
-      else fetchProducts();
+    if (user) {
+      fetchAllData();
     }
-  }, [currentView, listingMode]);
+  }, [user]);
+
+  // Sync tab with URL and LocalStorage
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', currentView);
+    window.history.replaceState({}, '', url.toString());
+    
+    localStorage.setItem('last_admin_view', currentView);
+  }, [currentView]);
 
   // ===================== LISTINGS LOGIC =====================
   const fetchListings = async () => {
     try {
-      setLoading(true);
       const { data: listingsData, error: listingsError } = await supabase
         .from('listings')
         .select('*')
@@ -224,16 +284,13 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
 
       setListings(mergedListings as Listing[]);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching listings:', error);
       showToast('Không thể tải dữ liệu tin đăng.', 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -267,8 +324,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     } catch (error) {
       console.error('Error fetching products:', error);
       showToast('Không thể tải dữ liệu sản phẩm.', 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -537,7 +592,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   // ===================== USERS LOGIC =====================
   const fetchUsers = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -547,8 +601,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     } catch (error) {
       console.error('Error fetching users:', error);
       showToast('Không thể tải dữ liệu người dùng.', 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -631,7 +683,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   // ===================== REPORTS & STATS LOGIC =====================
   const fetchOverallStats = async () => {
     try {
-      setLoading(true);
       const [
         { count: listingsCount },
         { count: usersCount },
@@ -657,14 +708,11 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchReports = async () => {
     try {
-      setLoading(true);
       const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
         .select('*')
@@ -691,8 +739,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -737,6 +783,177 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  const fetchRiskAlerts = async () => {
+    try {
+      const { data: risksData, error: risksError } = await supabase
+        .from('risk_alerts')
+        .select('*')
+        .order('detected_at', { ascending: false });
+
+      if (risksError) throw risksError;
+
+      if (risksData && risksData.length > 0) {
+        const roomIds = [...new Set(risksData.map(r => r.room_id))];
+        const { data: roomsData } = await supabase
+          .from('rooms')
+          .select('id, title')
+          .in('id', roomIds);
+        
+        const roomsMap = new Map();
+        roomsData?.forEach(r => roomsMap.set(r.id, r));
+
+        const mergedRisks = risksData.map(r => ({
+          ...r,
+          roomInfo: roomsMap.get(r.room_id)
+        }));
+        setRiskAlerts(mergedRisks);
+      } else {
+        setRiskAlerts([]);
+      }
+    } catch (error) {
+      console.error('Error fetching risk alerts:', error);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      if (ordersData && ordersData.length > 0) {
+        const userIds = [...new Set(ordersData.map(o => o.user_id).filter(id => id))];
+        let profilesMap = new Map();
+
+        if (userIds.length > 0) {
+          const { data: profilesData } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
+          profilesData?.forEach(p => profilesMap.set(p.id, p));
+        }
+
+        const mergedOrders = ordersData.map(o => ({
+          ...o,
+          buyerInfo: profilesMap.get(o.user_id)
+        }));
+        setOrdersList(mergedOrders);
+      } else {
+        setOrdersList([]);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (id: string, action: string) => {
+    if (action !== 'remind') return;
+    
+    try {
+      setActionLoading(id);
+      const order = ordersList.find(o => o.id === id);
+      if (!order) throw new Error("Không tìm thấy đơn hàng.");
+
+      // Lấy danh sách tất cả Seller (owner_id) trong đơn hàng
+      const sellerIds = [...new Set(order.items.map((item: any) => item.owner_id).filter((id: string) => id))];
+      
+      if (sellerIds.length === 0) {
+        showToast('Không xác định được người bán để nhắc nhở.', 'warning');
+        return;
+      }
+
+      // Gửi thông báo cho từng người bán
+      const notifications = sellerIds.map(sellerId => ({
+        receiver_id: sellerId,
+        type: 'warning',
+        title: 'Nhắc nhở xử lý đơn hàng',
+        message: `Admin nhắc nhở bạn có đơn hàng #${id.substring(0,8)} đang chờ xác nhận. Vui lòng kiểm tra và xử lý gấp.`,
+        action_url: `/landlord/orders` // Giả định route của chủ trọ
+      }));
+
+      const { error } = await supabase.from('notifications').insert(notifications);
+      if (error) throw error;
+      
+      showToast(`Đã gửi nhắc nhở tới ${sellerIds.length} người bán!`, 'success');
+    } catch (error: any) {
+      console.error('Error reminding seller:', error);
+      showToast('Lỗi khi gửi thông báo nhắc nhở.', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xóa đơn hàng',
+      message: 'Bạn có chắc chắn muốn xóa vĩnh viễn dữ liệu đơn hàng này?',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          setActionLoading(id);
+          const { error } = await supabase.from('orders').delete().eq('id', id);
+          if (error) throw error;
+          setOrdersList(prev => prev.filter(o => o.id !== id));
+          showToast('Đã xóa đơn hàng.', 'success');
+        } catch (error) {
+          showToast('Không thể xóa đơn hàng.', 'error');
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
+  const fetchContracts = async () => {
+    try {
+      const { data: contractsData, error: contractsError } = await supabase
+        .from('contracts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (contractsError) throw contractsError;
+
+      if (contractsData && contractsData.length > 0) {
+        // Collect all unique IDs to fetch in bulk
+        const roomIds = [...new Set(contractsData.map(c => c.room_id).filter(id => id))];
+        const userIds = [...new Set([
+          ...contractsData.map(c => c.tenant_id),
+          ...contractsData.map(c => c.owner_id)
+        ].filter(id => id))];
+
+        let roomsMap = new Map();
+        let profilesMap = new Map();
+
+        if (roomIds.length > 0) {
+          const { data: rooms } = await supabase.from('rooms').select('id, title, price').in('id', roomIds);
+          rooms?.forEach(r => roomsMap.set(r.id, r));
+        }
+
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
+          profiles?.forEach(p => profilesMap.set(p.id, p));
+        }
+
+        const mergedContracts = contractsData.map(c => {
+          const room = roomsMap.get(c.room_id);
+          return {
+            ...c,
+            roomInfo: room,
+            monthly_rent: room?.price || 0, // Dùng price từ bảng rooms
+            tenantInfo: profilesMap.get(c.tenant_id),
+            landlordInfo: profilesMap.get(c.owner_id)
+          };
+        });
+        setContractsList(mergedContracts);
+      } else {
+        setContractsList([]);
+      }
+    } catch (error) {
+      console.error('Error fetching contracts:', error);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -787,6 +1004,27 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
               >
                 <BarChart className="w-5 h-5" />
                 <span>Báo cáo và phản hồi</span>
+              </button>
+              <button 
+                onClick={() => setCurrentView('risks')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'risks' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+              >
+                <ShieldAlert className="w-5 h-5" />
+                <span>Cảnh báo Rủi ro AI</span>
+              </button>
+              <button 
+                onClick={() => setCurrentView('orders')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'orders' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                <span>Quản lý Đơn hàng</span>
+              </button>
+              <button 
+                onClick={() => setCurrentView('contracts')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'contracts' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+              >
+                <FileSignature className="w-5 h-5" />
+                <span>Quản lý Hợp đồng</span>
               </button>
             </nav>
           </div>
@@ -852,13 +1090,50 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
             />
           )}
 
-            {/* VIEW: OLD FALLBACK */}
-            {(currentView !== 'listings' && currentView !== 'users' && currentView !== 'reports' && currentView !== 'dashboard') && (
-              <div className="flex flex-col items-center justify-center h-full w-full text-slate-400 bg-white rounded-3xl border border-dashed border-slate-200">
-                <BarChart className="w-16 h-16 mb-4 text-slate-200" />
-                <h2 className="text-xl font-bold text-slate-600 mb-2">Tính năng đang phát triển</h2>
-                <p>Khu vực này đang được xây dựng.</p>
-              </div>
+            {/* VIEW: CẢNH BÁO RỦI RO AI */}
+            {currentView === 'risks' && (
+              <AdminRiskTab 
+                risks={riskAlerts} 
+                loading={loading} 
+                onNavigateToRoom={(roomId) => {
+                  console.log('Navigate to room:', roomId);
+                  showToast('Chức năng xem chi tiết phòng đang được kết nối...', 'info');
+                }} 
+              />
+            )}
+
+            {/* VIEW: QUẢN LÝ ĐƠN HÀNG */}
+            {currentView === 'orders' && (
+              <AdminOrdersTab 
+                orders={ordersList}
+                loading={loading}
+                actionLoading={actionLoading}
+                handleUpdateOrderStatus={handleUpdateOrderStatus}
+                handleUpdateOrderDetails={(order) => {
+                  setConfirmModal({
+                    isOpen: true,
+                    title: 'Chi tiết đơn hàng',
+                    message: `Đơn hàng #${order.id.substring(0,8)} gồm ${order.items?.length || 0} món. Địa chỉ: ${order.address || 'Không xác định'}. Bạn có muốn chuyển sang mục quản lý tin đăng của chủ trọ này không?`,
+                    type: 'info',
+                    onConfirm: () => {
+                      setListingMode('product');
+                      setCurrentView('listings');
+                    }
+                  });
+                }}
+                formatDate={formatDate}
+                getInitials={getInitials}
+              />
+            )}
+
+            {/* VIEW: QUẢN LÝ HỢP ĐỒNG */}
+            {currentView === 'contracts' && (
+              <AdminContractsTab 
+                contracts={contractsList}
+                loading={loading}
+                formatDate={formatDate}
+                getInitials={getInitials}
+              />
             )}
 
         </main>

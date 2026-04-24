@@ -1,8 +1,33 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { 
-  Users, BarChart, FileText, CheckCircle, Wallet, ShoppingCart, Shield, Clock 
+  Users, BarChart as ChartIcon, FileText, CheckCircle, Wallet, ShoppingCart, Shield, Clock 
 } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+import { Line, Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface AdminDashboardTabProps {
   overallStats: any;
@@ -12,6 +37,69 @@ interface AdminDashboardTabProps {
 }
 
 export const AdminDashboardTab = ({ overallStats, loading, setCurrentView, setListingMode }: AdminDashboardTabProps) => {
+  // Chart Data
+  const lineData = {
+    labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+    datasets: [
+      {
+        label: 'Tin đăng mới',
+        data: [12, 19, 15, 22, 18, 24, 20],
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: 'Sản phẩm mới',
+        data: [8, 12, 20, 14, 16, 10, 18],
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        tension: 0.4,
+        fill: true,
+      }
+    ],
+  };
+
+  const pieData = {
+    labels: ['Tin Phòng', 'Sản phẩm Đồ cũ'],
+    datasets: [
+      {
+        data: [overallStats.totalListings, overallStats.totalProducts],
+        backgroundColor: ['#3b82f6', '#f59e0b'],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  const trafficData = {
+    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+    datasets: [
+      {
+        label: 'Số lượt truy cập',
+        data: [2500, 3200, 3800, 4500, 4200, 5600, 7800, 9200, 8500, 9800, 11500, 12800],
+        backgroundColor: 'rgba(99, 102, 241, 0.5)',
+        borderColor: 'rgb(99, 102, 241)',
+        borderWidth: 1,
+        borderRadius: 8,
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: { font: { weight: 'bold' as any, family: 'Inter' } }
+      },
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { display: false } },
+      x: { grid: { display: false } }
+    }
+  };
+
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col w-full h-full">
@@ -58,7 +146,7 @@ export const AdminDashboardTab = ({ overallStats, loading, setCurrentView, setLi
                   </div>
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-4">
-                      <BarChart className="w-6 h-6" />
+                      <Wallet className="w-6 h-6" />
                     </div>
                     <p className="text-sm font-bold text-slate-500 mb-1">Doanh thu (Ước tính)</p>
                     <p className="text-2xl font-black text-slate-900">{loading ? '...' : overallStats.totalRevenue.toLocaleString('vi-VN')} đ</p>
@@ -66,36 +154,46 @@ export const AdminDashboardTab = ({ overallStats, loading, setCurrentView, setLi
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="bg-white p-8 rounded-3xl border border-slate-200 flex flex-col justify-center items-center text-center">
-                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                      <BarChart className="w-10 h-10 text-slate-300" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Biểu đồ đang phát triển</h3>
-                    <p className="text-slate-500 text-sm max-w-xs">Hệ thống đang tích hợp thư viện Chart.js để hiển thị biến động giá và lượng truy cập.</p>
-                  </div>
-                  <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                    <h3 className="text-xl font-bold text-slate-900 mb-6">Hoạt động gần đây</h3>
-                    <div className="space-y-6">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary">
-                            <Clock className="w-5 h-5" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-bold text-slate-800">
-                              {i === 1 ? 'Quản trị viên vừa phê duyệt 1 tin đăng' : 
-                               i === 2 ? 'Người dùng "Nguyễn Văn A" vừa đăng ký' : 
-                               'Tin đăng "Phòng trọ giá rẻ" vừa được cập nhật'}
-                            </p>
-                            <p className="text-xs text-slate-400 font-medium mt-1">Cách đây {i * 15} phút</p>
-                          </div>
-                        </div>
-                      ))}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm h-[400px]">
+                    <h3 className="text-xl font-bold text-slate-900 mb-6">Tăng trưởng Tin đăng</h3>
+                    <div className="h-[300px]">
+                      <Line data={lineData} options={chartOptions} />
                     </div>
                   </div>
+                  <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col h-[400px]">
+                    <h3 className="text-xl font-bold text-slate-900 mb-6 font-display">Cơ cấu Nội dung</h3>
+                    <div className="flex-1 flex items-center justify-center">
+                      <Pie data={pieData} options={{ ...chartOptions, plugins: { ...chartOptions.plugins, legend: { position: 'bottom' } } }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm h-[400px]">
+                    <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <ChartIcon className="w-6 h-6 text-indigo-500" />
+                        Thống kê lượng truy cập Website
+                    </h3>
+                    <div className="h-[280px]">
+                        <Bar 
+                            data={trafficData} 
+                            options={{
+                                ...chartOptions,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: { color: 'rgba(0,0,0,0.05)' }
+                                    },
+                                    x: {
+                                        grid: { display: false }
+                                    }
+                                }
+                            }} 
+                        />
+                    </div>
                 </div>
               </motion.div>
     </>
   );
 };
+
