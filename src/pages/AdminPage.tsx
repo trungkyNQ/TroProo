@@ -251,7 +251,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
       const { data: listingsData, error: listingsError } = await supabase
         .from('listings')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (listingsError) throw listingsError;
@@ -517,7 +516,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
           setActionLoading(id);
           const { data, error } = await supabase
             .from('listings')
-            .update({ is_active: false })
+            .delete()
             .eq('id', id)
             .select();
 
@@ -576,9 +575,9 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   };
 
   const listingStats = {
-    pending: listings.filter(l => l.approval_status === 'pending').length + products.filter(p => p.approval_status === 'pending').length,
-    approved: listings.filter(l => l.approval_status === 'approved').length + products.filter(p => p.approval_status === 'approved').length,
-    rejected: listings.filter(l => l.approval_status === 'rejected').length + products.filter(p => p.approval_status === 'rejected').length,
+    pending: listings.filter(l => l.approval_status === 'pending').length,
+    approved: listings.filter(l => l.approval_status === 'approved').length,
+    rejected: listings.filter(l => l.approval_status === 'rejected').length,
     totalProducts: products.length,
     availableProducts: products.filter(p => p.status === 'available').length,
     soldProducts: products.filter(p => p.status === 'sold').length,
