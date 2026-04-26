@@ -58,6 +58,11 @@ export const ListingsTab = ({ listingsData, setShowAddListingModal, onEditListin
                         <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg ${listing.is_active ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'}`}>
                           {listing.is_active ? 'Đang hiển thị' : 'Tạm ẩn'}
                         </div>
+                        {listing.approval_status && listing.approval_status !== 'approved' && (
+                          <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg text-white ${listing.approval_status === 'rejected' ? 'bg-red-500' : 'bg-orange-500'}`}>
+                            {listing.approval_status === 'rejected' ? 'Bị từ chối' : 'Chờ duyệt'}
+                          </div>
+                        )}
                       </div>
                       <div className="p-8">
                         <h3 className="text-lg font-black text-slate-900 font-display mb-2 group-hover:text-primary transition-colors">{listing.title}</h3>

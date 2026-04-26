@@ -68,7 +68,7 @@ CREATE TABLE public.listings (
   deposit bigint,
   latitude numeric,
   longitude numeric,
-  approval_status text DEFAULT 'approved'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
+  approval_status text DEFAULT 'pending'::text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT listings_pkey PRIMARY KEY (id),
   CONSTRAINT listings_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.rooms(id),
@@ -231,3 +231,33 @@ CREATE TABLE public.user_preferences (
   CONSTRAINT user_preferences_pkey PRIMARY KEY (id),
   CONSTRAINT user_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+ C R E A T E   P O L I C Y   " A d m i n s   c a n   u p d a t e   a l l   p r o d u c t s "   O N   p u b l i c . p r o d u c t s   F O R   U P D A T E   U S I N G   ( 
+     E X I S T S   (   S E L E C T   1   F R O M   p u b l i c . p r o f i l e s   W H E R E   p r o f i l e s . i d   =   a u t h . u i d ( )   A N D   p r o f i l e s . r o l e   =    
+ '  
+ a d m i n  
+ '  
+   ) 
+ ) ; 
+ C R E A T E   P O L I C Y   " A d m i n s   c a n   d e l e t e   a l l   p r o d u c t s "   O N   p u b l i c . p r o d u c t s   F O R   D E L E T E   U S I N G   ( 
+     E X I S T S   (   S E L E C T   1   F R O M   p u b l i c . p r o f i l e s   W H E R E   p r o f i l e s . i d   =   a u t h . u i d ( )   A N D   p r o f i l e s . r o l e   =    
+ '  
+ a d m i n  
+ '  
+   ) 
+ ) ; 
+ C R E A T E   P O L I C Y   " A d m i n s   c a n   u p d a t e   a l l   l i s t i n g s "   O N   p u b l i c . l i s t i n g s   F O R   U P D A T E   U S I N G   ( 
+     E X I S T S   (   S E L E C T   1   F R O M   p u b l i c . p r o f i l e s   W H E R E   p r o f i l e s . i d   =   a u t h . u i d ( )   A N D   p r o f i l e s . r o l e   =    
+ '  
+ a d m i n  
+ '  
+   ) 
+ ) ; 
+ C R E A T E   P O L I C Y   " A d m i n s   c a n   d e l e t e   a l l   l i s t i n g s "   O N   p u b l i c . l i s t i n g s   F O R   D E L E T E   U S I N G   ( 
+     E X I S T S   (   S E L E C T   1   F R O M   p u b l i c . p r o f i l e s   W H E R E   p r o f i l e s . i d   =   a u t h . u i d ( )   A N D   p r o f i l e s . r o l e   =    
+ '  
+ a d m i n  
+ '  
+   ) 
+ ) ; 
+  
+ 

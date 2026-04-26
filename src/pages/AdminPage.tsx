@@ -474,12 +474,14 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
           const product = products.find(p => p.id === id);
           if (!product) throw new Error("Không tìm thấy sản phẩm.");
 
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('products')
             .update({ approval_status: status })
-            .eq('id', id);
+            .eq('id', id)
+            .select();
 
           if (error) throw error;
+          if (!data || data.length === 0) throw new Error("Không có quyền chỉnh sửa ở Database (RLS).");
           
           // Gửi thông báo cho người bán
           await supabase.from('notifications').insert({

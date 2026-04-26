@@ -504,7 +504,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         service_fee: Number(listingForm.service_fee) || 150000,
         deposit: listingForm.deposit ? Number(listingForm.deposit) : Number(listingForm.price),
         is_active: true,
-        approval_status: 'approved'
+        approval_status: 'pending'
       };
 
       if (editingListingId) {
