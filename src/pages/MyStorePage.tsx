@@ -31,11 +31,18 @@ const TIMELINE_STEPS = [
   { key: 'pending',   label: 'Đặt hàng' },
   { key: 'confirmed', label: 'Xác nhận' },
   { key: 'shipping',  label: 'Đang giao' },
-  { key: 'delivered', label: 'Đã nhận' },
+  { key: 'delivered', label: 'Đã giao' },
+  { key: 'completed', label: 'Hoàn tất' },
 ];
 
 const getStepIndex = (status: string) => {
-  const map: Record<string, number> = { pending: 0, confirmed: 1, shipping: 2, delivered: 3, completed: 3 };
+  const map: Record<string, number> = { 
+    pending: 0, 
+    confirmed: 1, 
+    shipping: 2, 
+    delivered: 3, 
+    completed: 4 
+  };
   return map[status] ?? -1;
 };
 
@@ -53,32 +60,32 @@ function OrderTimeline({ status }: { status: string }) {
   if (['failed', 'cancelled'].includes(status)) return null;
   const current = getStepIndex(status);
   return (
-    <div className="flex items-center justify-between py-6 px-2">
+    <div className="flex items-start justify-between py-6 px-1 relative">
       {TIMELINE_STEPS.map((step, i) => (
         <React.Fragment key={step.key}>
-          <div className="flex flex-col items-center relative z-10">
+          <div className="flex flex-col items-center relative z-10 flex-shrink-0 w-12 sm:w-16">
             <motion.div 
               initial={false}
               animate={{ 
-                scale: i <= current ? 1 : 0.9,
-                backgroundColor: i < current ? 'var(--primary)' : i === current ? '#fff' : '#f8fafc',
-                borderColor: i <= current ? 'var(--primary)' : '#e2e8f0',
-                color: i < current ? '#fff' : i === current ? 'var(--primary)' : '#94a3b8'
+                scale: i === current ? 1.05 : 1,
+                backgroundColor: i < current ? '#0f172a' : i === current ? '#ffffff' : '#f8fafc',
+                borderColor: i === current ? '#000000' : i < current ? '#0f172a' : '#e2e8f0',
+                color: i < current ? '#ffffff' : i === current ? '#000000' : '#94a3b8'
               }}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all shadow-sm`}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black border-2 transition-all shadow-sm"
             >
-              {i < current ? <CheckCheck className="w-5 h-5"/> : i + 1}
+              {i + 1}
             </motion.div>
-            <span className={`text-[10px] sm:text-[11px] font-black mt-2 tracking-widest uppercase text-center transition-colors ${i <= current ? 'text-primary' : 'text-slate-400'}`}>
+            <span className={`text-[9px] sm:text-[10px] font-black mt-2 tracking-tighter uppercase text-center transition-colors leading-tight ${i === current ? 'text-black' : i < current ? 'text-slate-900' : 'text-slate-400'}`}>
               {step.label}
             </span>
           </div>
           {i < TIMELINE_STEPS.length - 1 && (
-            <div className="flex-1 h-0.5 mx-[-18px] mb-7 relative overflow-hidden bg-slate-100">
+            <div className="flex-1 h-[2px] mt-4 sm:mt-[17px] relative overflow-hidden bg-slate-200 min-w-[5px]">
                 <motion.div 
                     initial={false}
                     animate={{ width: i < current ? '100%' : '0%' }}
-                    className="absolute inset-0 bg-primary"
+                    className="absolute inset-0 bg-slate-900"
                 />
             </div>
           )}
@@ -130,26 +137,19 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
     if (!user) return;
     setLoading(true);
     try {
-      if (activeTab === 'store') {
-        const { data, error } = await supabase
-          .from('products').select('*').eq('owner_id', user.id)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setProducts(data || []);
-      } else if (activeTab === 'purchases') {
-        const { data, error } = await supabase
-          .from('orders').select('*').eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setPurchases(data || []);
-      } else if (activeTab === 'sales') {
-        const { data, error } = await supabase
-          .from('orders').select('*')
-          .filter('items', 'cs', JSON.stringify([{ owner_id: user.id }]))
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setSales(data || []);
-      }
+      const [resProducts, resPurchases, resSales] = await Promise.all([
+        supabase.from('products').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('*').filter('items', 'cs', JSON.stringify([{ owner_id: user.id }])).order('created_at', { ascending: false })
+      ]);
+
+      if (resProducts.error) throw resProducts.error;
+      if (resPurchases.error) throw resPurchases.error;
+      if (resSales.error) throw resSales.error;
+
+      setProducts(resProducts.data || []);
+      setPurchases(resPurchases.data || []);
+      setSales(resSales.data || []);
     } catch (error) {
       console.error('Lỗi tải dữ liệu:', error);
       showToast('Lỗi khi lấy dữ liệu', 'error');
@@ -160,7 +160,7 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
 
   useEffect(() => {
     fetchData();
-  }, [user, activeTab]);
+  }, [user]);
 
   // ── Seller: Update order status ─────────────────────────────
   const handleSellerUpdateStatus = async (orderId: string, newStatus: string) => {
@@ -201,6 +201,26 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
       showToast(labelMap[newStatus] || 'Cập nhật thành công', 'success');
       setNoteText('');
       setShowNoteInput(null);
+      fetchData();
+    } catch (err: any) {
+      showToast('Lỗi khi cập nhật trạng thái: ' + (err.message || ''), 'error');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  // ── Buyer: Update status (confirm receipt) ──────────────────
+  const handleBuyerUpdateStatus = async (orderId: string, newStatus: string) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      showToast('🎉 Tuyệt vời! Cảm ơn bạn đã xác nhận nhận hàng.', 'success');
       fetchData();
     } catch (err: any) {
       showToast('Lỗi khi cập nhật trạng thái: ' + (err.message || ''), 'error');
@@ -425,12 +445,29 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
                     </div>
                 )}
 
-                {/* Non-actionable completed/failed state for seller */}
-                {isSalesTab && !sellerAction && !canSellerCancel && (
+                {/* Non-actionable completed/failed state for seller/buyer */}
+                {((isSalesTab && !sellerAction && !canSellerCancel) || (!isSalesTab && ['completed', 'failed', 'cancelled'].includes(order.status))) && (
                     <div className="py-4 px-5 bg-slate-100/50 rounded-2xl border border-slate-200/50 text-center">
                         <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Trạng thái cuối cùng</p>
-                        <p className="text-sm font-bold text-slate-600"> {order.status === 'completed' ? 'Đã hoàn thành' : 'Đã hủy'}.</p>
+                        <p className="text-sm font-bold text-slate-600"> 
+                          {order.status === 'completed' ? 'Đơn hàng hoàn tất' 
+                           : order.status === 'delivered' ? 'Đã giao hàng thành công'
+                           : order.status === 'failed' ? 'Giao hàng thất bại'
+                           : 'Đơn hàng đã hủy'}.
+                        </p>
                     </div>
+                )}
+
+                {/* Buyer action: Confirm Receipt */}
+                {!isSalesTab && order.status === 'delivered' && (
+                    <button
+                        disabled={isUpdating}
+                        onClick={() => handleBuyerUpdateStatus(order.id, 'completed')}
+                        className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200"
+                    >
+                        {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCheck className="w-5 h-5" />}
+                        {isUpdating ? 'Đang xử lý...' : 'Đã nhận được hàng'}
+                    </button>
                 )}
             </div>
           </div>
