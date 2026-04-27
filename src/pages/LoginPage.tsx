@@ -108,16 +108,7 @@ export const LoginPage = ({ onNavigate }: { onNavigate: (page: string) => void }
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <label className="text-slate-700 text-sm font-bold ml-1">Mật khẩu</label>
-                <button 
-                  type="button"
-                  onClick={() => onNavigate('forgot-password')}
-                  className="text-primary text-sm font-bold hover:text-orange-600 transition-colors"
-                >
-                  Quên mật khẩu?
-                </button>
-              </div>
+              <label className="text-slate-700 text-sm font-bold ml-1">Mật khẩu</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 w-5 h-5" />
                 <input 
@@ -138,15 +129,25 @@ export const LoginPage = ({ onNavigate }: { onNavigate: (page: string) => void }
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <input 
-                className="w-5 h-5 rounded-md border-2 border-slate-200 text-primary focus:ring-primary focus:ring-offset-2 cursor-pointer" 
-                id="remember" 
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <label className="text-sm font-medium text-slate-600 cursor-pointer select-none" htmlFor="remember">Ghi nhớ số điện thoại</label>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input 
+                  className="w-5 h-5 rounded-md border-2 border-slate-200 text-primary focus:ring-primary focus:ring-offset-2 cursor-pointer" 
+                  id="remember" 
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label className="text-sm font-medium text-slate-600 cursor-pointer select-none" htmlFor="remember">Ghi nhớ số điện thoại</label>
+              </div>
+
+              <button 
+                type="button"
+                onClick={() => onNavigate('forgot-password')}
+                className="text-primary text-sm font-bold hover:text-orange-600 transition-colors"
+              >
+                Quên mật khẩu?
+              </button>
             </div>
 
             <button 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   Package, 
@@ -14,6 +14,7 @@ import {
   Loader2,
   Trash2
 } from 'lucide-react';
+import { AdminOrderDetailsModal } from './AdminOrderDetailsModal';
 
 interface Order {
   id: string;
@@ -37,7 +38,6 @@ interface AdminOrdersTabProps {
   loading: boolean;
   actionLoading: string | null;
   handleUpdateOrderStatus: (id: string, status: string) => void;
-  handleUpdateOrderDetails: (order: Order) => void;
   formatDate: (date: string) => string;
   getInitials: (name?: string) => string;
 }
@@ -47,10 +47,11 @@ export const AdminOrdersTab = ({
   loading, 
   actionLoading, 
   handleUpdateOrderStatus, 
-  handleUpdateOrderDetails,
   formatDate,
   getInitials
 }: AdminOrdersTabProps) => {
+
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -262,7 +263,7 @@ export const AdminOrdersTab = ({
                           </button>
                         )}
                         <button 
-                          onClick={() => handleUpdateOrderDetails(order)}
+                          onClick={() => setViewingOrder(order as any)}
                           className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
                           title="Xem chi tiết đơn hàng"
                         >
@@ -277,6 +278,16 @@ export const AdminOrdersTab = ({
           )}
         </div>
       </div>
+
+      {viewingOrder && (
+        <AdminOrderDetailsModal 
+          order={viewingOrder} 
+          onClose={() => setViewingOrder(null)} 
+          formatDate={formatDate}
+          getStatusStyle={getStatusStyle}
+          getStatusLabel={getStatusLabel}
+        />
+      )}
     </motion.div>
   );
 };

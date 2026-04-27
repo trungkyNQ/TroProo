@@ -39,6 +39,17 @@ const WARRANTIES = [
   'Bảo hành hãng 12 tháng'
 ];
 
+const DA_NANG_DISTRICTS = [
+  'Quận Cẩm Lệ',
+  'Quận Hải Châu',
+  'Quận Liên Chiểu',
+  'Quận Ngũ Hành Sơn',
+  'Quận Sơn Trà',
+  'Quận Thanh Khê',
+  'Huyện Hòa Vang',
+  'Huyện Hoàng Sa'
+];
+
 export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: ProductModalProps) => {
   const isEdit = !!product;
   const { showToast } = useToast();
@@ -108,7 +119,7 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
     }
 
     const validImages = form.images.filter(img => img.trim() !== '');
-    if (!form.title || !form.price || validImages.length === 0) {
+    if (!form.title || !form.price || validImages.length === 0 || !form.address_summary) {
       showToast('Vui lòng điền đủ thông tin bắt buộc (*)', 'warning');
       return;
     }
@@ -296,7 +307,7 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
                               <div>
                                  <label className="block text-[11px] font-black text-slate-900 uppercase tracking-widest mb-2 px-1">Bảo hành</label>
                                  <select 
-                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none font-bold appearance-none transition-all focus:bg-white text-xs"
+                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none font-bold appearance-none transition-all focus:bg-white"
                                     value={form.warranty}
                                     onChange={(e) => setForm({ ...form, warranty: e.target.value })}
                                  >
@@ -322,13 +333,15 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
                      <section className="space-y-6">
                         <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Chi tiết tin đăng</h4>
                         <div>
-                           <label className="block text-[11px] font-black text-slate-900 uppercase tracking-widest mb-2 px-1 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-primary"/> Địa chỉ giao dịch</label>
-                           <input 
-                              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none focus:border-primary/30 font-bold transition-all focus:bg-white"
-                              placeholder="Khu vực Mỹ Đình, Quận Nam Từ Liêm..."
+                           <label className="block text-[11px] font-black text-slate-900 uppercase tracking-widest mb-2 px-1 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-primary"/> Địa chỉ giao dịch <span className="text-primary">*</span></label>
+                           <select 
+                              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 outline-none font-bold appearance-none transition-all focus:bg-white"
                               value={form.address_summary}
                               onChange={(e) => setForm({ ...form, address_summary: e.target.value })}
-                           />
+                           >
+                              <option value="" disabled>-- Chọn Quận/Huyện --</option>
+                              {DA_NANG_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                           </select>
                         </div>
                         <div>
                            <label className="block text-[11px] font-black text-slate-900 uppercase tracking-widest mb-2 px-1">Mô tả sản phẩm</label>

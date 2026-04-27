@@ -1110,18 +1110,6 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
                 loading={loading}
                 actionLoading={actionLoading}
                 handleUpdateOrderStatus={handleUpdateOrderStatus}
-                handleUpdateOrderDetails={(order) => {
-                  setConfirmModal({
-                    isOpen: true,
-                    title: 'Chi tiết đơn hàng',
-                    message: `Đơn hàng #${order.id.substring(0,8)} gồm ${order.items?.length || 0} món. Địa chỉ: ${order.address || 'Không xác định'}. Bạn có muốn chuyển sang mục quản lý tin đăng của chủ trọ này không?`,
-                    type: 'info',
-                    onConfirm: () => {
-                      setListingMode('product');
-                      setCurrentView('listings');
-                    }
-                  });
-                }}
                 formatDate={formatDate}
                 getInitials={getInitials}
               />
