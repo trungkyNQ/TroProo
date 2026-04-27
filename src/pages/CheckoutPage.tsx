@@ -13,6 +13,17 @@ interface CheckoutPageProps {
   params?: any;
 }
 
+const DA_NANG_DISTRICTS = [
+  'Quận Cẩm Lệ',
+  'Quận Hải Châu',
+  'Quận Liên Chiểu',
+  'Quận Ngũ Hành Sơn',
+  'Quận Sơn Trà',
+  'Quận Thanh Khê',
+  'Huyện Hòa Vang',
+  'Huyện Hoàng Sa'
+];
+
 export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPageProps) => {
   const { cartItems, cartTotal, clearCart } = useCart();
   const { showToast } = useToast();
@@ -23,7 +34,8 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
   // Form states
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+  const [district, setDistrict] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vnpay'>('cod');
 
   // Items to checkout
@@ -53,7 +65,7 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
           if (!error && data) {
             setFullName(data.full_name || user.email?.split('@')[0] || '');
             setPhone(data.phone || '');
-            setAddress(data.permanent_address || '');
+            setStreetAddress(data.permanent_address || '');
           } else {
              setFullName(user.email?.split('@')[0] || '');
           }
@@ -74,7 +86,7 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
       return;
     }
 
-    if (!phone.trim() || !address.trim() || !fullName.trim()) {
+    if (!phone.trim() || !district || !streetAddress.trim() || !fullName.trim()) {
       showToast('Vui lòng điền đầy đủ thông tin giao hàng!', 'error');
       return;
     }
@@ -90,6 +102,8 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
     setIsSubmitting(true);
 
     try {
+      const fullAddress = `${streetAddress.trim()}, ${district}, TP. Đà Nẵng`;
+
       // 1. Insert into orders table
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
@@ -98,7 +112,7 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
           items: checkoutItems,
           total_amount: currentTotal,
           phone: phone.trim(),
-          address: address.trim(),
+          address: fullAddress,
           payment_method: paymentMethod,
           status: 'pending'
         })
@@ -211,16 +225,29 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
                            />
                         </div>
                      </div>
-                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Địa chỉ giao hàng <span className="text-red-500">*</span></label>
-                        <div className="relative">
-                           <MapPin className="absolute left-5 top-[18px] w-5 h-5 text-slate-400" />
-                           <textarea 
-                              rows={3}
-                              value={address}
-                              onChange={(e) => setAddress(e.target.value)}
-                              placeholder="Nhập địa chỉ nhận hàng chi tiết (Tòa nhà, số nhà, ngõ/hẻm, tên đường...)"
-                              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-5 py-4 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-medium text-slate-900 resize-none"
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                           <label className="block text-sm font-bold text-slate-700 mb-2">Quận/Huyện (Đà Nẵng) <span className="text-red-500">*</span></label>
+                           <div className="relative">
+                              <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                              <select 
+                                 value={district}
+                                 onChange={(e) => setDistrict(e.target.value)}
+                                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-5 py-4 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-bold appearance-none text-slate-900"
+                              >
+                                 <option value="" disabled>-- Chọn Quận/Huyện --</option>
+                                 {DA_NANG_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                              </select>
+                           </div>
+                        </div>
+                        <div>
+                           <label className="block text-sm font-bold text-slate-700 mb-2">Phường/Xã & Số nhà <span className="text-red-500">*</span></label>
+                           <input 
+                              type="text"
+                              value={streetAddress}
+                              onChange={(e) => setStreetAddress(e.target.value)}
+                              placeholder="Phường/Xã, tên đường, ngõ hẻm..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-medium text-slate-900"
                            />
                         </div>
                      </div>
