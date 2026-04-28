@@ -49,6 +49,18 @@ interface Profile {
   role: string;
   avatar_url: string;
   created_at: string;
+  id_card_number?: string;
+  id_card_date?: string;
+  id_card_place?: string;
+  birth_date?: string;
+  gender?: string;
+  permanent_address?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
+  zalo_phone?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
 }
 
 interface Listing {
@@ -417,92 +429,114 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     }
   };
 
-  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'Xác nhận thay đổi',
-      message: `Bạn có chắc muốn ${status === 'approved' ? 'duyệt' : 'từ chối'} tin đăng này?`,
-      type: 'warning',
-      onConfirm: async () => {
-        try {
-          setActionLoading(id);
-          const listing = listings.find(l => l.id === id);
-          if (!listing) throw new Error("Không tìm thấy tin đăng.");
+  const executeListingApproval = async (id: string, status: 'approved' | 'rejected', reason?: string) => {
+    try {
+      setActionLoading(id);
+      const listing = listings.find(l => l.id === id);
+      if (!listing) throw new Error("Không tìm thấy tin đăng.");
 
-          const { data, error } = await supabase
-            .from('listings')
-            .update({ approval_status: status })
-            .eq('id', id)
-            .select();
+      const { data, error } = await supabase
+        .from('listings')
+        .update({ approval_status: status })
+        .eq('id', id)
+        .select();
 
-          if (error) throw error;
-          if (!data || data.length === 0) throw new Error("Không có quyền chỉnh sửa ở Database.");
-          
-          // Gửi thông báo cho chủ trọ
-          await supabase.from('notifications').insert({
-            sender_id: user?.id,
-            receiver_id: listing.owner_id,
-            type: status === 'approved' ? 'success' : 'error',
-            title: status === 'approved' ? 'Tin đăng đã được duyệt!' : 'Tin đăng bị từ chối',
-            message: status === 'approved' 
-              ? `Tin đăng "${listing.title}" của bạn đã được phê duyệt và hiển thị công khai.`
-              : `Rất tiếc, tin đăng "${listing.title}" của bạn không được phê duyệt. Vui lòng kiểm tra lại thông tin.`,
-            related_entity_id: id
-          });
-
-          setListings(prev => prev.map(l => l.id === id ? { ...l, approval_status: status } : l));
-          showToast(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} tin đăng!`, 'success');
-        } catch (error: any) {
-          showToast(error.message || 'Lỗi cập nhật trạng thái.', 'error');
-        } finally {
-          setActionLoading(null);
-        }
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Không có quyền chỉnh sửa ở Database.");
+      
+      let message = `Tin đăng "${listing.title}" của bạn đã được phê duyệt và hiển thị công khai.`;
+      if (status === 'rejected') {
+        message = `Rất tiếc, tin đăng "${listing.title}" của bạn không được phê duyệt. Lý do: ${reason || 'Không xác định'}. Vui lòng kiểm tra lại thông tin.`;
       }
-    });
+
+      // Gửi thông báo cho chủ trọ
+      await supabase.from('notifications').insert({
+        sender_id: user?.id,
+        receiver_id: listing.owner_id,
+        type: status === 'approved' ? 'success' : 'error',
+        title: status === 'approved' ? 'Tin đăng đã được duyệt!' : 'Tin đăng bị từ chối',
+        message: message,
+        related_entity_id: id
+      });
+
+      setListings(prev => prev.map(l => l.id === id ? { ...l, approval_status: status } : l));
+      showToast(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} tin đăng!`, 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Lỗi cập nhật trạng thái.', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleProductApproval = async (id: string, status: 'approved' | 'rejected') => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'Xác nhận phê duyệt sản phẩm',
-      message: `Bạn có chắc muốn ${status === 'approved' ? 'duyệt' : 'từ chối'} sản phẩm này?`,
-      type: 'warning',
-      onConfirm: async () => {
-        try {
-          setActionLoading(id);
-          const product = products.find(p => p.id === id);
-          if (!product) throw new Error("Không tìm thấy sản phẩm.");
-
-          const { data, error } = await supabase
-            .from('products')
-            .update({ approval_status: status })
-            .eq('id', id)
-            .select();
-
-          if (error) throw error;
-          if (!data || data.length === 0) throw new Error("Không có quyền chỉnh sửa ở Database (RLS).");
-          
-          // Gửi thông báo cho người bán
-          await supabase.from('notifications').insert({
-            sender_id: user?.id,
-            receiver_id: product.owner_id,
-            type: status === 'approved' ? 'success' : 'error',
-            title: status === 'approved' ? 'Sản phẩm đã được duyệt!' : 'Sản phẩm bị từ chối',
-            message: status === 'approved' 
-              ? `Sản phẩm "${product.title}" của bạn đã được phê duyệt và hiển thị trên cửa hàng.`
-              : `Rất tiếc, sản phẩm "${product.title}" của bạn không được phê duyệt. Vui lòng kiểm tra lại hình ảnh và thông tin.`,
-            related_entity_id: id
-          });
-
-          setProducts(prev => prev.map(p => p.id === id ? { ...p, approval_status: status } : p));
-          showToast(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} sản phẩm!`, 'success');
-        } catch (error: any) {
-          showToast(error.message || 'Lỗi cập nhật trạng thái sản phẩm.', 'error');
-        } finally {
-          setActionLoading(null);
+  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected', reason?: string) => {
+    if (status === 'approved') {
+      setConfirmModal({
+        isOpen: true,
+        title: 'Xác nhận thay đổi',
+        message: `Bạn có chắc muốn duyệt tin đăng này?`,
+        type: 'warning',
+        onConfirm: async () => {
+          await executeListingApproval(id, status);
         }
+      });
+    } else {
+      await executeListingApproval(id, status, reason);
+    }
+  };
+
+  const executeProductApproval = async (id: string, status: 'approved' | 'rejected', reason?: string) => {
+    try {
+      setActionLoading(id);
+      const product = products.find(p => p.id === id);
+      if (!product) throw new Error("Không tìm thấy sản phẩm.");
+
+      const { data, error } = await supabase
+        .from('products')
+        .update({ approval_status: status })
+        .eq('id', id)
+        .select();
+
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Không có quyền chỉnh sửa ở Database (RLS).");
+      
+      let message = `Sản phẩm "${product.title}" của bạn đã được phê duyệt và hiển thị trên cửa hàng.`;
+      if (status === 'rejected') {
+        message = `Rất tiếc, sản phẩm "${product.title}" của bạn không được phê duyệt. Lý do: ${reason || 'Không xác định'}. Vui lòng kiểm tra lại hình ảnh và thông tin.`;
       }
-    });
+
+      // Gửi thông báo cho người bán
+      await supabase.from('notifications').insert({
+        sender_id: user?.id,
+        receiver_id: product.owner_id,
+        type: status === 'approved' ? 'success' : 'error',
+        title: status === 'approved' ? 'Sản phẩm đã được duyệt!' : 'Sản phẩm bị từ chối',
+        message: message,
+        related_entity_id: id
+      });
+
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, approval_status: status } : p));
+      showToast(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} sản phẩm!`, 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Lỗi cập nhật trạng thái sản phẩm.', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleProductApproval = async (id: string, status: 'approved' | 'rejected', reason?: string) => {
+    if (status === 'approved') {
+      setConfirmModal({
+        isOpen: true,
+        title: 'Xác nhận phê duyệt sản phẩm',
+        message: `Bạn có chắc muốn duyệt sản phẩm này?`,
+        type: 'warning',
+        onConfirm: async () => {
+          await executeProductApproval(id, status);
+        }
+      });
+    } else {
+      await executeProductApproval(id, status, reason);
+    }
   };
 
   const handleDeleteListing = async (id: string) => {

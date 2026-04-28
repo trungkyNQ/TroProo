@@ -227,16 +227,16 @@ export const AdminUsersTab = ({
 
                 {/* MODAL XEM CHI TIẾT NGƯỜI DÙNG */}
                 {viewingUser && (
-                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
-                      <div className="relative h-24 bg-gradient-to-r from-primary to-blue-600">
-                        <button onClick={() => setViewingUser(null)} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors">
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl my-8 relative">
+                      <div className="relative h-28 bg-gradient-to-r from-primary to-blue-600">
+                        <button onClick={() => setViewingUser(null)} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors z-10">
                           <XCircle className="w-6 h-6" />
                         </button>
                       </div>
-                      <div className="px-8 pb-8 relative">
-                        <div className="absolute -top-12 left-8 w-24 h-24 rounded-3xl bg-white p-1 shadow-xl">
-                          <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center text-2xl font-black text-primary overflow-hidden">
+                      <div className="px-6 md:px-8 pb-8 relative">
+                        <div className="absolute -top-14 left-6 md:left-8 w-28 h-28 rounded-3xl bg-white p-1 shadow-xl">
+                          <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center text-3xl font-black text-primary overflow-hidden">
                             {viewingUser.avatar_url ? (
                               <img src={viewingUser.avatar_url} className="w-full h-full object-cover" alt="avatar" />
                             ) : (
@@ -246,34 +246,122 @@ export const AdminUsersTab = ({
                         </div>
                         <div className="mt-16">
                           <div className="flex items-center gap-3">
-                            <h3 className="text-2xl font-bold text-slate-900">{viewingUser.full_name}</h3>
+                            <h3 className="text-2xl font-bold text-slate-900">{viewingUser.full_name || '\u00A0'}</h3>
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">{viewingUser.role}</span>
                           </div>
                           <p className="text-slate-500 text-sm mt-1">ID: {viewingUser.id}</p>
                           
-                          <div className="grid grid-cols-2 gap-6 mt-8">
-                            <div className="p-4 bg-slate-50 rounded-2xl col-span-2">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số điện thoại</p>
-                              <p className="text-base font-black text-slate-700">{viewingUser.phone || 'Chưa cập nhật'}</p>
+                          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            {/* CỘT TRÁI */}
+                            <div className="space-y-6">
+                                {/* Thông tin cơ bản */}
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        Thông tin cơ bản
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số điện thoại</p>
+                                            <p className="text-sm font-bold text-slate-900">{viewingUser.phone || '\u00A0'}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngày sinh</p>
+                                                <p className="text-sm font-bold text-slate-900">{viewingUser.birth_date ? formatDate(viewingUser.birth_date).split(' ')[0] : '\u00A0'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Giới tính</p>
+                                                <p className="text-sm font-bold text-slate-900">{viewingUser.gender === 'male' ? 'Nam' : viewingUser.gender === 'female' ? 'Nữ' : viewingUser.gender === 'other' ? 'Khác' : '\u00A0'}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Địa chỉ thường trú</p>
+                                            <p className="text-sm font-bold text-slate-900">{viewingUser.permanent_address || '\u00A0'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngày gia nhập</p>
+                                            <p className="text-sm font-bold text-slate-900">{formatDate(viewingUser.created_at)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Liên hệ khẩn cấp */}
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        Liên hệ khác
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Zalo</p>
+                                            <p className="text-sm font-bold text-slate-900">{viewingUser.zalo_phone || '\u00A0'}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Người LH khẩn cấp</p>
+                                                <p className="text-sm font-bold text-slate-900 line-clamp-1">{viewingUser.emergency_contact_name || '\u00A0'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">SĐT Khẩn cấp</p>
+                                                <p className="text-sm font-bold text-slate-900">{viewingUser.emergency_contact_phone || '\u00A0'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="p-4 bg-slate-50 rounded-2xl">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Vai trò</p>
-                              <div className="flex items-center gap-2 text-sm font-bold text-slate-700 mt-1">
-                                {viewingUser.role === 'admin' ? <Shield className="w-4 h-4 text-purple-600" /> : 
-                                 viewingUser.role === 'landlord' ? <Home className="w-4 h-4 text-blue-600" /> : 
-                                 <UserCheck className="w-4 h-4 text-emerald-600" />}
-                                {viewingUser.role}
-                              </div>
+
+                            {/* CỘT PHẢI */}
+                            <div className="space-y-6">
+                                {/* Định danh */}
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        Định danh (CCCD/CMND)
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số CCCD/CMND</p>
+                                            <p className="text-sm font-bold text-slate-900">{viewingUser.id_card_number || '\u00A0'}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngày cấp</p>
+                                                <p className="text-sm font-bold text-slate-900">{viewingUser.id_card_date ? formatDate(viewingUser.id_card_date).split(' ')[0] : '\u00A0'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Nơi cấp</p>
+                                                <p className="text-sm font-bold text-slate-900">{viewingUser.id_card_place || '\u00A0'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Ngân hàng */}
+                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        Thông tin thanh toán
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngân hàng</p>
+                                            <p className="text-sm font-bold text-slate-900">{viewingUser.bank_name || '\u00A0'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số tài khoản</p>
+                                            <p className="text-sm font-bold text-slate-900 font-mono tracking-wider">{viewingUser.bank_account_number || '\u00A0'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Chủ tài khoản</p>
+                                            <p className="text-sm font-bold text-slate-900 uppercase">{viewingUser.bank_account_name || '\u00A0'}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="p-4 bg-slate-50 rounded-2xl">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngày gia nhập</p>
-                              <p className="text-sm font-bold text-slate-700">{formatDate(viewingUser.created_at)}</p>
-                            </div>
+                            
                           </div>
                           
-                          <div className="mt-8 flex gap-3">
+                          <div className="mt-8 flex gap-3 pt-6 border-t border-slate-100">
                             <button onClick={() => { handleEditUserClick(viewingUser); setViewingUser(null); }} className="flex-1 bg-primary text-white font-bold py-3 rounded-2xl hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
-                              Chỉnh sửa hồ sơ
+                              Chỉnh sửa hồ sơ cơ bản
                             </button>
                             <button onClick={() => setViewingUser(null)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl hover:bg-slate-200 transition-colors">
                               Đóng

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, Search, Edit, Trash2, MapPin, Loader2, CheckCircle, XCircle, ShoppingCart, UserCheck, Shield, Clock, AlertCircle, Home, Eye
@@ -13,11 +13,11 @@ interface AdminListingsTabProps {
   products: any[];
   loading: boolean;
   actionLoading: string | null;
-  handleUpdateStatus: (id: string, status: 'approved' | 'rejected') => void;
+  handleUpdateStatus: (id: string, status: 'approved' | 'rejected', reason?: string) => void;
   handleEditClick: (item: any) => void;
   handleDeleteListing: (id: string) => void;
   handleUpdateProductStatus: (id: string, status: string) => void;
-  handleUpdateProductApproval: (id: string, status: 'approved' | 'rejected') => void;
+  handleUpdateProductApproval: (id: string, status: 'approved' | 'rejected', reason?: string) => void;
   handleEditProductClick: (product: any) => void;
   handleDeleteProduct: (id: string) => void;
   highlightedListingId: string | null;
@@ -47,6 +47,22 @@ export const AdminListingsTab = ({
   editingProduct, setEditingProduct, productEditForm, setProductEditForm, handleSaveProductEdit,
   setHighlightedListingId, onNavigate
 }: AdminListingsTabProps) => {
+  const [rejectModal, setRejectModal] = useState<{isOpen: boolean, id: string, type: 'room'|'product'} | null>(null);
+  const [rejectReasonType, setRejectReasonType] = useState<string>('Bài đăng thiếu thông tin');
+  const [customReason, setCustomReason] = useState<string>('');
+
+  const handleConfirmReject = () => {
+    if (!rejectModal) return;
+    const finalReason = rejectReasonType === 'Lí do khác' ? customReason : rejectReasonType;
+    if (rejectModal.type === 'room') {
+      handleUpdateStatus(rejectModal.id, 'rejected', finalReason);
+    } else {
+      handleUpdateProductApproval(rejectModal.id, 'rejected', finalReason);
+    }
+    setRejectModal(null);
+    setCustomReason('');
+  };
+
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col w-full h-full">
@@ -224,7 +240,7 @@ export const AdminListingsTab = ({
                                       className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Phê duyệt">
                                 <CheckCircle className="w-5 h-5" />
                               </button>
-                              <button onClick={() => handleUpdateStatus(listing.id, 'rejected')} 
+                              <button onClick={() => setRejectModal({ isOpen: true, id: listing.id, type: 'room' })} 
                                       className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Từ chối">
                                 <XCircle className="w-5 h-5" />
                               </button>
@@ -328,7 +344,7 @@ export const AdminListingsTab = ({
                                       className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Duyệt bài">
                                 <CheckCircle className="w-5 h-5" />
                               </button>
-                              <button onClick={() => handleUpdateProductApproval(product.id, 'rejected')} 
+                              <button onClick={() => setRejectModal({ isOpen: true, id: product.id, type: 'product' })} 
                                       className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Từ chối">
                                 <XCircle className="w-5 h-5" />
                               </button>
@@ -440,6 +456,61 @@ export const AdminListingsTab = ({
                   <button onClick={handleSaveProductEdit} disabled={actionLoading === 'saving-product'} className="px-6 py-2.5 text-sm font-black bg-primary text-white hover:bg-primary-hover rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95">
                     {actionLoading === 'saving-product' && <Loader2 className="w-4 h-4 animate-spin"/>}
                     LƯU THAY ĐỔI
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* MODAL TỪ CHỐI */}
+        <AnimatePresence>
+          {rejectModal && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                          className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative border border-slate-200 dark:border-slate-800">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-xl">
+                    <XCircle className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Từ chối bài đăng</h3>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Lý do từ chối:</label>
+                    <select 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all"
+                      value={rejectReasonType}
+                      onChange={(e) => setRejectReasonType(e.target.value)}
+                    >
+                      <option value="Bài đăng thiếu thông tin">Bài đăng thiếu thông tin</option>
+                      <option value="Bài đăng khả nghi">Bài đăng khả nghi</option>
+                      <option value="Bài đăng chứa nội dung không phù hợp">Bài đăng chứa nội dung không phù hợp</option>
+                      <option value="Lí do khác">Lí do khác...</option>
+                    </select>
+                  </div>
+                  
+                  {rejectReasonType === 'Lí do khác' && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 mt-4">Nhập lý do chi tiết:</label>
+                      <textarea 
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all min-h-[100px] resize-none"
+                        placeholder="Nhập lý do từ chối..."
+                        value={customReason}
+                        onChange={(e) => setCustomReason(e.target.value)}
+                      ></textarea>
+                    </motion.div>
+                  )}
+                  <p className="text-xs text-slate-500 font-medium mt-2">
+                    Lý do này sẽ được gửi kèm trong thông báo đến người đăng bài.
+                  </p>
+                </div>
+                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                  <button onClick={() => setRejectModal(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors">Hủy</button>
+                  <button onClick={handleConfirmReject} 
+                          disabled={rejectReasonType === 'Lí do khác' && !customReason.trim()}
+                          className="px-6 py-2.5 text-sm font-bold bg-red-600 text-white hover:bg-red-700 rounded-xl shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Xác nhận từ chối
                   </button>
                 </div>
               </motion.div>
