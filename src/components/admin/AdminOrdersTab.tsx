@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Package, 
   Search, 
@@ -12,7 +12,11 @@ import {
   Clock,
   ChevronRight,
   Loader2,
-  Trash2
+  Trash2,
+  Edit,
+  X,
+  Phone,
+  MapPin
 } from 'lucide-react';
 import { AdminOrderDetailsModal } from './AdminOrderDetailsModal';
 
@@ -38,6 +42,8 @@ interface AdminOrdersTabProps {
   loading: boolean;
   actionLoading: string | null;
   handleUpdateOrderStatus: (id: string, status: string) => void;
+  handleUpdateOrderDetails: (id: string, details: { phone: string, address: string, status: string }) => void;
+  handleDeleteOrder: (id: string) => void;
   formatDate: (date: string) => string;
   getInitials: (name?: string) => string;
 }
@@ -46,12 +52,16 @@ export const AdminOrdersTab = ({
   orders, 
   loading, 
   actionLoading, 
-  handleUpdateOrderStatus, 
+  handleUpdateOrderStatus,
+  handleUpdateOrderDetails,
+  handleDeleteOrder,
   formatDate,
   getInitials
 }: AdminOrdersTabProps) => {
 
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [editForm, setEditForm] = useState({ phone: '', address: '', status: '' });
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -250,24 +260,44 @@ export const AdminOrdersTab = ({
                       <p className="text-[10px] text-slate-400 font-bold uppercase">{order.items?.length || 0} sản phẩm</p>
                     </td>
                     <td className="px-6 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         {order.status === 'pending' && (
                           <button 
                             onClick={() => handleUpdateOrderStatus(order.id, 'remind')}
                             disabled={actionLoading === order.id}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 rounded-lg text-xs font-bold transition-all"
-                            title="Gửi thông báo nhắc nhở người bán xử lý đơn"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 rounded-lg text-xs font-bold transition-all"
+                            title="Nhắc nhở người bán xử lý đơn"
                           >
-                            <Clock className="w-4 h-4" />
-                            Nhắc nhở
+                            <Clock className="w-3.5 h-3.5" />
+                            Nhắc
                           </button>
                         )}
+                        <button 
+                          onClick={() => { 
+                            setEditingOrder(order); 
+                            setEditForm({ phone: order.phone, address: order.address, status: order.status }); 
+                          }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                          title="Sửa thông tin đơn hàng"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
                         <button 
                           onClick={() => setViewingOrder(order as any)}
                           className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
                           title="Xem chi tiết đơn hàng"
                         >
-                          <Eye className="w-5 h-5" />
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteOrder(order.id)}
+                          disabled={actionLoading === order.id}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                          title="Xóa đơn hàng"
+                        >
+                          {actionLoading === order.id 
+                            ? <Loader2 className="w-4 h-4 animate-spin" /> 
+                            : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                     </td>
@@ -288,6 +318,83 @@ export const AdminOrdersTab = ({
           getStatusLabel={getStatusLabel}
         />
       )}
+
+      {/* MODAL SỬA THÔNG TIN ĐƠN HÀNG */}
+      <AnimatePresence>
+        {editingOrder && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-xl font-bold text-slate-900">Chỉnh sửa đơn hàng</h3>
+                <button onClick={() => setEditingOrder(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5">Số điện thoại</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="text" 
+                        value={editForm.phone}
+                        onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5">Địa chỉ giao hàng</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+                      <textarea 
+                        value={editForm.address}
+                        onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all min-h-[80px] resize-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5">Trạng thái đơn hàng</label>
+                    <div className="relative">
+                      <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <select
+                        value={editForm.status}
+                        onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all appearance-none"
+                      >
+                        <option value="pending">Chờ xác nhận</option>
+                        <option value="confirmed">Đã xác nhận</option>
+                        <option value="shipping">Đang giao</option>
+                        <option value="delivered">Đã giao</option>
+                        <option value="completed">Hoàn tất</option>
+                        <option value="cancelled">Đã hủy</option>
+                        <option value="failed">Lỗi/Thất bại</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 pb-6 flex justify-end gap-3">
+                <button onClick={() => setEditingOrder(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors font-sans">Hủy bỏ</button>
+                <button
+                  onClick={() => {
+                    handleUpdateOrderDetails(editingOrder.id, editForm);
+                    setEditingOrder(null);
+                  }}
+                  disabled={actionLoading === editingOrder.id}
+                  className="px-6 py-2.5 text-sm font-black bg-primary text-white hover:bg-primary-hover rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2"
+                >
+                  {actionLoading === editingOrder.id && <Loader2 className="w-4 h-4 animate-spin" />}
+                  LƯU THAY ĐỔI
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

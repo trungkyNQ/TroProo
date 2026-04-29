@@ -22,6 +22,18 @@ import { AuthLayout } from './components/layout/AuthLayout';
 import { useAuth } from './context/AuthContext';
 import { useToast } from './context/ToastContext';
 
+// Prevent stale state when browser restores page from bfcache
+// This fires when returning from another tab/window via bfcache restore
+if (typeof window !== 'undefined') {
+  window.addEventListener('pageshow', (event) => {
+    // event.persisted = true means page was restored from bfcache (not a fresh load)
+    if (event.persisted) {
+      // Force reload to get fresh auth session & data
+      window.location.reload();
+    }
+  });
+}
+
 // Helper component to pass legacy props to pages
 const LegacyPageWrapper = ({ Component, requireAuth, allowedRoles }: { Component: any, requireAuth?: boolean, allowedRoles?: string[] }) => {
   const { user, role, logout, loading } = useAuth();

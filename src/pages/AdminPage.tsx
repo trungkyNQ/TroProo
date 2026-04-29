@@ -142,16 +142,22 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   const [currentView, setCurrentView] = useState<AdminView>(getInitialView());
   
   // Listings State
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('approved');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>(
+    (localStorage.getItem('last_admin_active_tab') as any) || 'approved'
+  );
   const [listings, setListings] = useState<Listing[]>([]);
   
   // Products State
   const [products, setProducts] = useState<Product[]>([]);
-  const [listingMode, setListingMode] = useState<'room' | 'product'>('room');
+  const [listingMode, setListingMode] = useState<'room' | 'product'>(
+    (localStorage.getItem('last_admin_listing_mode') as any) || 'room'
+  );
   
   // Users State
   const [usersList, setUsersList] = useState<Profile[]>([]);
-  const [userFilter, setUserFilter] = useState<'all' | 'landlord' | 'tenant' | 'admin'>('all');
+  const [userFilter, setUserFilter] = useState<'all' | 'landlord' | 'tenant' | 'admin'>(
+    (localStorage.getItem('last_admin_user_filter') as any) || 'all'
+  );
 
   // Shared State
   const [loading, setLoading] = useState(true);
@@ -220,6 +226,23 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
 
   // Navigation & Highlight State
   const [highlightedListingId, setHighlightedListingId] = useState<string | null>(null);
+
+  // Persistence Effect
+  useEffect(() => {
+    localStorage.setItem('last_admin_view', currentView);
+  }, [currentView]);
+
+  useEffect(() => {
+    localStorage.setItem('last_admin_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('last_admin_listing_mode', listingMode);
+  }, [listingMode]);
+
+  useEffect(() => {
+    localStorage.setItem('last_admin_user_filter', userFilter);
+  }, [userFilter]);
 
   // Consolidated Initial Load
   useEffect(() => {
@@ -884,37 +907,77 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   };
 
   const handleUpdateOrderStatus = async (id: string, action: string) => {
-    if (action !== 'remind') return;
-    
+    // Nếu là nhắc nhở
+    if (action === 'remind') {
+      try {
+        setActionLoading(id);
+        const order = ordersList.find(o => o.id === id);
+        if (!order) throw new Error("Không tìm thấy đơn hàng.");
+
+        const sellerIds = [...new Set(order.items.map((item: any) => item.owner_id).filter((id: string) => id))];
+        if (sellerIds.length === 0) {
+          showToast('Không xác định được người bán để nhắc nhở.', 'warning');
+          return;
+        }
+
+        const notifications = sellerIds.map(sellerId => ({
+          receiver_id: sellerId,
+          type: 'warning',
+          title: 'Nhắc nhở xử lý đơn hàng',
+          message: `Admin nhắc nhở bạn có đơn hàng #${id.substring(0,8)} đang chờ xác nhận. Vui lòng kiểm tra và xử lý gấp.`,
+          action_url: `/landlord/orders`
+        }));
+
+        const { error } = await supabase.from('notifications').insert(notifications);
+        if (error) throw error;
+        showToast(`Đã gửi nhắc nhở tới ${sellerIds.length} người bán!`, 'success');
+      } catch (error: any) {
+        showToast('Lỗi khi gửi thông báo nhắc nhở.', 'error');
+      } finally {
+        setActionLoading(null);
+      }
+      return;
+    }
+
+    // Nếu là cập nhật trạng thái trực tiếp
+    const validStatuses = ['pending', 'confirmed', 'shipping', 'delivered', 'completed', 'cancelled', 'failed'];
+    if (validStatuses.includes(action)) {
+      try {
+        setActionLoading(id);
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: action })
+          .eq('id', id);
+        if (error) throw error;
+        setOrdersList(prev => prev.map(o => o.id === id ? { ...o, status: action } : o));
+        showToast('Cập nhật trạng thái đơn hàng thành công!', 'success');
+      } catch (error: any) {
+        showToast(error.message || 'Lỗi khi cập nhật trạng thái.', 'error');
+      } finally {
+        setActionLoading(null);
+      }
+    }
+  };
+
+  const handleUpdateOrderDetails = async (id: string, details: { phone: string, address: string, status: string }) => {
     try {
       setActionLoading(id);
-      const order = ordersList.find(o => o.id === id);
-      if (!order) throw new Error("Không tìm thấy đơn hàng.");
-
-      // Lấy danh sách tất cả Seller (owner_id) trong đơn hàng
-      const sellerIds = [...new Set(order.items.map((item: any) => item.owner_id).filter((id: string) => id))];
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          phone: details.phone, 
+          address: details.address, 
+          status: details.status 
+        })
+        .eq('id', id);
       
-      if (sellerIds.length === 0) {
-        showToast('Không xác định được người bán để nhắc nhở.', 'warning');
-        return;
-      }
-
-      // Gửi thông báo cho từng người bán
-      const notifications = sellerIds.map(sellerId => ({
-        receiver_id: sellerId,
-        type: 'warning',
-        title: 'Nhắc nhở xử lý đơn hàng',
-        message: `Admin nhắc nhở bạn có đơn hàng #${id.substring(0,8)} đang chờ xác nhận. Vui lòng kiểm tra và xử lý gấp.`,
-        action_url: `/landlord/orders` // Giả định route của chủ trọ
-      }));
-
-      const { error } = await supabase.from('notifications').insert(notifications);
       if (error) throw error;
       
-      showToast(`Đã gửi nhắc nhở tới ${sellerIds.length} người bán!`, 'success');
+      setOrdersList(prev => prev.map(o => o.id === id ? { ...o, ...details } : o));
+      showToast('Cập nhật thông tin đơn hàng thành công!', 'success');
     } catch (error: any) {
-      console.error('Error reminding seller:', error);
-      showToast('Lỗi khi gửi thông báo nhắc nhở.', 'error');
+      console.error('Error updating order details:', error);
+      showToast(error.message || 'Lỗi khi cập nhật thông tin đơn hàng.', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -935,6 +998,47 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
           showToast('Đã xóa đơn hàng.', 'success');
         } catch (error) {
           showToast('Không thể xóa đơn hàng.', 'error');
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
+  const handleUpdateContract = async (id: string, form: { start_date: string; end_date: string; monthly_rent: number; deposit: number; status: string }) => {
+    try {
+      setActionLoading(id);
+      const { error } = await supabase.from('contracts').update({
+        start_date: form.start_date,
+        end_date: form.end_date,
+        deposit: form.deposit,
+        status: form.status,
+      }).eq('id', id);
+      if (error) throw error;
+      setContractsList(prev => prev.map(c => c.id === id ? { ...c, ...form } : c));
+      showToast('Cập nhật hợp đồng thành công!', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Lỗi khi cập nhật hợp đồng.', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteContract = async (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xóa hợp đồng',
+      message: 'Bạn có chắc chắn muốn xóa vĩnh viễn hợp đồng này? Hành động này không thể hoàn tác.',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          setActionLoading(id);
+          const { error } = await supabase.from('contracts').delete().eq('id', id);
+          if (error) throw error;
+          setContractsList(prev => prev.filter(c => c.id !== id));
+          showToast('Đã xóa hợp đồng.', 'success');
+        } catch (error) {
+          showToast('Không thể xóa hợp đồng.', 'error');
         } finally {
           setActionLoading(null);
         }
@@ -968,7 +1072,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
         }
 
         if (userIds.length > 0) {
-          const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
+          const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url, phone').in('id', userIds);
           profiles?.forEach(p => profilesMap.set(p.id, p));
         }
 
@@ -1144,6 +1248,8 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
                 loading={loading}
                 actionLoading={actionLoading}
                 handleUpdateOrderStatus={handleUpdateOrderStatus}
+                handleUpdateOrderDetails={handleUpdateOrderDetails}
+                handleDeleteOrder={handleDeleteOrder}
                 formatDate={formatDate}
                 getInitials={getInitials}
               />
@@ -1154,8 +1260,11 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
               <AdminContractsTab 
                 contracts={contractsList}
                 loading={loading}
+                actionLoading={actionLoading}
                 formatDate={formatDate}
                 getInitials={getInitials}
+                handleUpdateContract={handleUpdateContract}
+                handleDeleteContract={handleDeleteContract}
               />
             )}
 

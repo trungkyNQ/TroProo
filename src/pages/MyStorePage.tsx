@@ -4,7 +4,7 @@ import { useToast } from '../context/ToastContext';
 import {
   LayoutGrid, Trash2, Edit3, PlusCircle, X, CheckCircle2, Loader2, ArrowLeft,
   Store, AlertCircle, ShoppingBag, Package, Truck, Clock, DollarSign,
-  CheckCheck, MapPin, ThumbsUp, ChevronDown
+  CheckCheck, MapPin, ThumbsUp, ChevronDown, User
 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -107,7 +107,9 @@ const SELLER_ACTIONS: Record<string, { label: string; next: string; color: strin
 };
 
 export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) => {
-  const [activeTab, setActiveTab] = useState<'store' | 'sales' | 'purchases'>('store');
+  const [activeTab, setActiveTab] = useState<'store' | 'sales' | 'purchases'>(
+    (localStorage.getItem('last_store_tab') as any) || 'store'
+  );
   const [products, setProducts] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -143,13 +145,24 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
         supabase.from('orders').select('*').filter('items', 'cs', JSON.stringify([{ owner_id: user.id }])).order('created_at', { ascending: false })
       ]);
 
-      if (resProducts.error) throw resProducts.error;
-      if (resPurchases.error) throw resPurchases.error;
-      if (resSales.error) throw resSales.error;
+      const productsData = resProducts.data || [];
+      const purchasesRaw = resPurchases.data || [];
+      const salesRaw = resSales.data || [];
 
-      setProducts(resProducts.data || []);
-      setPurchases(resPurchases.data || []);
-      setSales(resSales.data || []);
+      // Fetch profile info for orders
+      const userIds = [...new Set([...purchasesRaw, ...salesRaw].map(o => o.user_id).filter(id => id))];
+      let profilesMap = new Map();
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase.from('profiles').select('id, full_name, avatar_url, phone').in('id', userIds);
+        profilesData?.forEach(p => profilesMap.set(p.id, p));
+      }
+
+      const purchasesData = purchasesRaw.map(o => ({ ...o, buyerInfo: profilesMap.get(o.user_id) }));
+      const salesData = salesRaw.map(o => ({ ...o, buyerInfo: profilesMap.get(o.user_id) }));
+
+      setProducts(productsData);
+      setPurchases(purchasesData);
+      setSales(salesData);
     } catch (error) {
       console.error('Lỗi tải dữ liệu:', error);
       showToast('Lỗi khi lấy dữ liệu', 'error');
@@ -161,6 +174,10 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
   useEffect(() => {
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem('last_store_tab', activeTab);
+  }, [activeTab]);
 
   // ── Seller: Update order status ─────────────────────────────
   const handleSellerUpdateStatus = async (orderId: string, newStatus: string) => {
@@ -342,6 +359,28 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
 
             {/* Delivery Info */}
             <div className="mt-8 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                {isSalesTab && order.buyerInfo && (
+                  <div className="mb-4 pb-4 border-b border-slate-200/60">
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                        <User className="w-3.5 h-3.5 text-primary" /> Thông tin người mua
+                    </h5>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0 border-2 border-white shadow-sm">
+                        {order.buyerInfo.avatar_url ? (
+                          <img src={order.buyerInfo.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 font-black text-xs uppercase">
+                            {order.buyerInfo.full_name?.charAt(0) || 'U'}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900">{order.buyerInfo.full_name}</p>
+                        <p className="text-xs font-bold text-slate-500">{order.phone || order.buyerInfo.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5 text-primary" /> Thông tin giao hàng
                 </h5>
@@ -541,14 +580,15 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
                         />
                         <div className="absolute top-3 left-3">
                           <div className="flex flex-col gap-1.5">
-                            <span className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg uppercase tracking-widest shadow-lg ${product.status === 'hidden' ? 'bg-slate-800/90' : 'bg-emerald-500/90'} backdrop-blur-sm w-fit`}>
-                              {product.status === 'hidden' ? 'Đã Ẩn' : 'Đang Bán'}
-                            </span>
-                            {product.approval_status !== 'approved' && (
-                              <span className={`text-[9px] font-black text-white px-2 py-1 rounded-lg uppercase tracking-wider shadow-lg backdrop-blur-sm w-fit ${
-                                product.approval_status === 'rejected' ? 'bg-red-500/90' : 'bg-orange-500/90'
+                            {product.approval_status === 'approved' ? (
+                              <span className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg uppercase tracking-widest shadow-lg ${product.status === 'hidden' ? 'bg-slate-800/90' : 'bg-emerald-500/90'} backdrop-blur-sm w-fit`}>
+                                {product.status === 'hidden' ? 'Đã Ẩn' : 'Đang Bán'}
+                              </span>
+                            ) : (
+                              <span className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg uppercase tracking-widest shadow-lg backdrop-blur-sm w-fit ${
+                                product.approval_status === 'rejected' ? 'bg-rose-600/90' : 'bg-orange-500/90'
                               }`}>
-                                {product.approval_status === 'rejected' ? 'Bị từ chối' : 'Chờ duyệt'}
+                                {product.approval_status === 'rejected' ? 'Bị từ chối' : 'Đang chờ duyệt'}
                               </span>
                             )}
                           </div>

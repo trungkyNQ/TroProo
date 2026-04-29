@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  FileText, Search, Edit, Trash2, MapPin, Loader2, CheckCircle, XCircle, ShoppingCart, UserCheck, Shield, Clock, AlertCircle, Home, Eye, X
+  FileText, Search, Edit, Trash2, MapPin, Loader2, CheckCircle, XCircle, ShoppingCart, UserCheck, Shield, Clock, AlertCircle, Home, Eye, X,
+  Image as ImageIcon, Phone, Calendar
 } from 'lucide-react';
 
 interface AdminListingsTabProps {
@@ -50,6 +51,7 @@ export const AdminListingsTab = ({
   const [rejectModal, setRejectModal] = useState<{isOpen: boolean, id: string, type: 'room'|'product'} | null>(null);
   const [rejectReasonType, setRejectReasonType] = useState<string>('Bài đăng thiếu thông tin');
   const [customReason, setCustomReason] = useState<string>('');
+  const [viewingItem, setViewingItem] = useState<any>(null);
 
   const handleConfirmReject = () => {
     if (!rejectModal) return;
@@ -178,7 +180,7 @@ export const AdminListingsTab = ({
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {currentListings.map((listing) => (
                     <tr key={listing.id} 
-                        className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all group ${
+                        className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all ${
                           listing.id === highlightedListingId ? 'bg-orange-50 dark:bg-orange-900/20 shadow-[inset_4px_0_0_0_#f97316]' : ''
                         }`}>
                       <td className="px-6 py-4">
@@ -233,7 +235,7 @@ export const AdminListingsTab = ({
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1">
                           {listing.approval_status === 'pending' && (
                             <>
                               <button onClick={() => handleUpdateStatus(listing.id, 'approved')} 
@@ -250,8 +252,8 @@ export const AdminListingsTab = ({
                                   className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chỉnh sửa">
                             <Edit className="w-5 h-5" />
                           </button>
-                          <button className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Xem chi tiết"
-                                  onClick={() => onNavigate('listing-detail')}>
+                          <button onClick={() => setViewingItem({ ...listing, _itemType: 'room' })} 
+                                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Xem chi tiết">
                             <Eye className="w-5 h-5" />
                           </button>
                           <button onClick={() => handleDeleteListing(listing.id)} 
@@ -337,7 +339,7 @@ export const AdminListingsTab = ({
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1">
                           {product.approval_status === 'pending' && (
                             <>
                               <button onClick={() => handleUpdateProductApproval(product.id, 'approved')} 
@@ -353,6 +355,10 @@ export const AdminListingsTab = ({
                           <button onClick={() => handleEditProductClick(product)} 
                                   className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chỉnh sửa">
                             <Edit className="w-5 h-5" />
+                          </button>
+                          <button onClick={() => setViewingItem({ ...product, _itemType: 'product' })} 
+                                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Xem chi tiết">
+                            <Eye className="w-5 h-5" />
                           </button>
                           <button onClick={() => handleUpdateProductStatus(product.id, product.status === 'available' ? 'sold' : 'available')} 
                                   className={`p-1.5 rounded-lg transition-all ${product.status === 'available' ? 'text-slate-400 hover:text-orange-600 hover:bg-orange-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
@@ -515,6 +521,195 @@ export const AdminListingsTab = ({
                           className="px-6 py-2.5 text-sm font-bold bg-red-600 text-white hover:bg-red-700 rounded-xl shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                     Xác nhận từ chối
                   </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+        {/* MODAL XEM CHI TIẾT (PREVIEW) */}
+        <AnimatePresence>
+          {viewingItem && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingItem(null)}>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                          className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50 relative shrink-0">
+                  <div className="flex items-center gap-3">
+                    <span className={`p-2 rounded-xl ${viewingItem._itemType === 'room' ? 'bg-primary/10 text-primary' : 'bg-blue-100 text-blue-600'}`}>
+                      {viewingItem._itemType === 'room' ? <Home className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+                    </span>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 leading-tight">Chi tiết {viewingItem._itemType === 'room' ? 'tin đăng' : 'sản phẩm'}</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+                          viewingItem.approval_status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 
+                          viewingItem.approval_status === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                        }`}>
+                          {viewingItem.approval_status === 'approved' ? 'Đã duyệt' : viewingItem.approval_status === 'rejected' ? 'Bị từ chối' : 'Đang chờ duyệt'}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">#{viewingItem.id.substring(0,8)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => setViewingItem(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Body Content */}
+                <div className="overflow-y-auto flex-1 p-8 custom-scrollbar">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    {/* Left: Image & Main Info */}
+                    <div className="space-y-6">
+                      <div className="aspect-video rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group relative">
+                        {viewingItem.image_url ? (
+                          <img src={viewingItem.image_url} alt={viewingItem.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-300">
+                            <ImageIcon className="w-16 h-16 opacity-20" />
+                          </div>
+                        )}
+                        <div className="absolute top-4 left-4">
+                          <span className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl text-lg font-black text-primary shadow-lg border border-white/20">
+                            {viewingItem.price.toLocaleString('vi-VN')}đ
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h1 className="text-2xl font-black text-slate-900 leading-tight mb-3 font-display uppercase tracking-tight">{viewingItem.title}</h1>
+                        <div className="flex flex-wrap gap-4">
+                          <div className="flex items-center gap-2 text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                            <MapPin className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-bold">{viewingItem.location || viewingItem.category || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                            <Clock className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-bold">Đăng lúc: {formatDate(viewingItem.created_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50/80 rounded-2xl p-6 border border-slate-100">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Mô tả chi tiết
+                        </h4>
+                        <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                          {viewingItem.description || 'Không có mô tả chi tiết cho bài đăng này.'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Detailed Specs & Owner */}
+                    <div className="space-y-8">
+                      {/* Detailed Specs */}
+                      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Thông tin kỹ thuật</h4>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Loại bài đăng</p>
+                            <p className="text-sm font-black text-slate-900">{viewingItem._itemType === 'room' ? 'Cho thuê phòng' : 'Bán hàng'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{viewingItem._itemType === 'room' ? 'Loại phòng' : 'Danh mục'}</p>
+                            <p className="text-sm font-black text-slate-900">{viewingItem.type || viewingItem.category || 'N/A'}</p>
+                          </div>
+                          {viewingItem.condition && (
+                            <div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Tình trạng</p>
+                              <p className="text-sm font-black text-slate-900 uppercase">{viewingItem.condition}</p>
+                            </div>
+                          )}
+                          {viewingItem.area && (
+                            <div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Diện tích</p>
+                              <p className="text-sm font-black text-slate-900">{viewingItem.area} m²</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Owner Information */}
+                      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Thông tin người đăng</h4>
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-xl font-black text-primary overflow-hidden border-2 border-white shadow-md">
+                            {viewingItem.ownerInfo?.avatar_url ? (
+                              <img src={viewingItem.ownerInfo.avatar_url} className="w-full h-full object-cover" alt="avatar" />
+                            ) : (
+                              getInitials(viewingItem.ownerInfo?.full_name)
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-black text-slate-900">{viewingItem.ownerInfo?.full_name || 'Không rõ tên'}</h3>
+                              <Shield className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-tighter">{viewingItem.ownerInfo?.role === 'landlord' ? 'Chủ trọ / Người bán' : 'Người dùng'}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <span className="text-xs font-bold text-slate-500 flex items-center gap-2">
+                              <Phone className="w-3.5 h-3.5" /> Số điện thoại
+                            </span>
+                            <span className="text-sm font-black text-slate-900">{viewingItem.ownerInfo?.phone || 'Chưa cập nhật'}</span>
+                          </div>
+                          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <span className="text-xs font-bold text-slate-500 flex items-center gap-2">
+                              <Calendar className="w-3.5 h-3.5" /> Ngày gia nhập
+                            </span>
+                            <span className="text-sm font-black text-slate-900">{formatDate(viewingItem.ownerInfo?.created_at) || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rejected Reason (if any) */}
+                      {viewingItem.approval_status === 'rejected' && viewingItem.rejection_reason && (
+                        <div className="bg-rose-50 rounded-2xl p-6 border border-rose-100">
+                          <h4 className="text-xs font-black text-rose-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" /> Lý do bị từ chối trước đó
+                          </h4>
+                          <p className="text-sm font-bold text-rose-700 leading-relaxed italic">
+                            "{viewingItem.rejection_reason}"
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setViewingItem(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Đóng lại</button>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    {viewingItem.approval_status === 'pending' && (
+                      <>
+                        <button 
+                          onClick={() => { 
+                            if (viewingItem._itemType === 'room') {
+                              handleUpdateStatus(viewingItem.id, 'approved');
+                            } else {
+                              handleUpdateProductApproval(viewingItem.id, 'approved');
+                            }
+                            setViewingItem(null); 
+                          }}
+                          className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-black shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center gap-2 uppercase tracking-tight"
+                        >
+                          <CheckCircle className="w-4 h-4" /> Phê duyệt ngay
+                        </button>
+                        <button 
+                          onClick={() => { setRejectModal({ isOpen: true, id: viewingItem.id, type: viewingItem._itemType === 'room' ? 'room' : 'product' }); setViewingItem(null); }}
+                          className="px-6 py-2.5 bg-white text-rose-600 border border-rose-200 rounded-xl text-sm font-black hover:bg-rose-50 transition-all flex items-center gap-2 uppercase tracking-tight"
+                        >
+                          <XCircle className="w-4 h-4" /> Từ chối bài
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             </div>
