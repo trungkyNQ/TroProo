@@ -52,12 +52,12 @@ export const AddListingModal = ({
             className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h3 className="text-xl font-black text-slate-900 font-display">Tạo bài đăng mới</h3>
                 <p className="text-xs font-bold text-slate-400 mt-1">Bài đăng chỉ để quảng cáo, không tự tạo phòng quản lý</p>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"><X className="w-5 h-5" /></button>
+              <button onClick={onClose} className="p-2 hover:bg-rose-50 rounded-xl transition-colors text-slate-400 hover:text-rose-500"><X className="w-5 h-5" /></button>
             </div>
 
             {/* Content */}

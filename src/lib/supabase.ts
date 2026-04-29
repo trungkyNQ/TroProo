@@ -11,3 +11,22 @@ export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key'
 );
+
+export interface Listing {
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  area?: number;
+  type?: string;
+  location?: string;
+  street?: string;
+  image_url?: string;
+  images?: string[];
+  amenities?: string[];
+  is_active?: boolean;
+  approval_status?: string;
+  created_at?: string;
+  owner_id?: string;
+  [key: string]: any;
+}

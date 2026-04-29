@@ -245,7 +245,6 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
         alert={selectedAlert}
         onResolve={xacNhanDaXuLyCanhBao}
         onNavigate={onNavigate}
-        apiKey={import.meta.env.VITE_GEMINI_API_KEY}
       />
     </motion.div>
   );

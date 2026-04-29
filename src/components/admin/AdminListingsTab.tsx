@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  FileText, Search, Edit, Trash2, MapPin, Loader2, CheckCircle, XCircle, ShoppingCart, UserCheck, Shield, Clock, AlertCircle, Home, Eye
+  FileText, Search, Edit, Trash2, MapPin, Loader2, CheckCircle, XCircle, ShoppingCart, UserCheck, Shield, Clock, AlertCircle, Home, Eye, X
 } from 'lucide-react';
 
 interface AdminListingsTabProps {
@@ -378,9 +378,10 @@ export const AdminListingsTab = ({
           {editingListing && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                          className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative border border-slate-200 dark:border-slate-800">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800">
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Chỉnh sửa Tin đăng</h3>
+                          className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                  <h3 className="text-xl font-bold text-slate-900">Chỉnh sửa Tin đăng</h3>
+                  <button onClick={() => setEditingListing(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
@@ -406,8 +407,8 @@ export const AdminListingsTab = ({
                       value={editForm.location} onChange={e => setEditForm({...editForm, location: e.target.value})} />
                   </div>
                 </div>
-                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                  <button onClick={() => setEditingListing(null)} className="px-6 py-2.5 text-sm font-black text-slate-500 hover:text-slate-700 transition-colors uppercase">Hủy</button>
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                  <button onClick={() => setEditingListing(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Hủy</button>
                   <button onClick={handleSaveEdit} disabled={actionLoading === 'saving'} className="px-6 py-2.5 text-sm font-black bg-primary text-white hover:bg-primary-hover rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95">
                     {actionLoading === 'saving' && <Loader2 className="w-4 h-4 animate-spin"/>}
                     LƯU THAY ĐỔI
@@ -423,9 +424,10 @@ export const AdminListingsTab = ({
           {editingProduct && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                          className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative border border-slate-200 dark:border-slate-800">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800">
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Chỉnh sửa Sản phẩm</h3>
+                          className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                  <h3 className="text-xl font-bold text-slate-900">Chỉnh sửa Sản phẩm</h3>
+                  <button onClick={() => setEditingProduct(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
@@ -451,8 +453,8 @@ export const AdminListingsTab = ({
                       value={productEditForm.condition} onChange={e => setProductEditForm({...productEditForm, condition: e.target.value})} />
                   </div>
                 </div>
-                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                  <button onClick={() => setEditingProduct(null)} className="px-6 py-2.5 text-sm font-black text-slate-500 hover:text-slate-700 transition-colors uppercase">Hủy</button>
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                  <button onClick={() => setEditingProduct(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Hủy</button>
                   <button onClick={handleSaveProductEdit} disabled={actionLoading === 'saving-product'} className="px-6 py-2.5 text-sm font-black bg-primary text-white hover:bg-primary-hover rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95">
                     {actionLoading === 'saving-product' && <Loader2 className="w-4 h-4 animate-spin"/>}
                     LƯU THAY ĐỔI
@@ -468,12 +470,13 @@ export const AdminListingsTab = ({
           {rejectModal && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                          className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative border border-slate-200 dark:border-slate-800">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                  <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-xl">
-                    <XCircle className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Từ chối bài đăng</h3>
+                          className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                  <h2 className="text-xl font-bold flex items-center gap-3">
+                    <span className="p-1.5 bg-red-100 text-red-600 rounded-lg"><XCircle className="w-5 h-5" /></span>
+                    <span className="text-slate-900">Từ chối bài đăng</span>
+                  </h2>
+                  <button onClick={() => setRejectModal(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
@@ -505,8 +508,8 @@ export const AdminListingsTab = ({
                     Lý do này sẽ được gửi kèm trong thông báo đến người đăng bài.
                   </p>
                 </div>
-                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                  <button onClick={() => setRejectModal(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors">Hủy</button>
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                  <button onClick={() => setRejectModal(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Hủy</button>
                   <button onClick={handleConfirmReject} 
                           disabled={rejectReasonType === 'Lí do khác' && !customReason.trim()}
                           className="px-6 py-2.5 text-sm font-bold bg-red-600 text-white hover:bg-red-700 rounded-xl shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">

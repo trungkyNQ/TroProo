@@ -168,7 +168,7 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
     }
   };
 
-  const firstValidImage = form.images.find(img => img.trim() !== '') || 'https://via.placeholder.com/400x500?text=Tr%E1%BB%8D+Pro';
+
 
   return (
     <AnimatePresence>
@@ -179,10 +179,10 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 40 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="bg-white rounded-[40px] w-full max-w-6xl h-[90vh] shadow-2xl flex flex-col md:flex-row overflow-hidden border border-white/20"
+            className="bg-white rounded-[40px] w-full max-w-3xl h-[90vh] shadow-2xl flex flex-col md:flex-row overflow-hidden border border-white/20"
           >
             {/* LEFT: FORM SECTION */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden border-r border-slate-100">
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
                {/* Header */}
                <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div className="flex items-center gap-4">
@@ -366,50 +366,6 @@ export const ProductModal = ({ isOpen, onClose, user, product, onSuccess }: Prod
                   >
                      {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5" /> {isEdit ? 'Lưu thay đổi' : 'Đăng tin ngay'}</>}
                   </button>
-               </div>
-            </div>
-
-            {/* RIGHT: LIVE PREVIEW SECTION */}
-            <div className="hidden lg:flex w-[400px] bg-slate-50 p-10 flex-col overflow-y-auto items-center">
-               <div className="sticky top-0 w-full">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">
-                     <Eye className="w-4 h-4" /> Live Preview
-                  </div>
-                  
-                  <div className="bg-white rounded-[32px] overflow-hidden border border-slate-200 shadow-2xl w-full flex flex-col group transform transition-transform hover:-translate-y-2 duration-500">
-                     <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
-                        <img 
-                           src={firstValidImage} 
-                           alt="Preview" 
-                           className="w-full h-full object-cover" 
-                           referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute top-4 left-4">
-                           <div className="bg-primary/90 text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-widest shadow-lg">
-                              {form.condition || 'Mới'}
-                           </div>
-                        </div>
-                     </div>
-                     <div className="p-6">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">{form.category}</p>
-                        <h4 className="text-slate-900 font-bold text-base mb-3 line-clamp-2 h-12 leading-snug">{form.title || 'Tiêu đề sản phẩm'}</h4>
-                        <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-                           <span className="text-xl font-black text-slate-900 font-display">
-                              {Number(form.price || 0).toLocaleString()} <span className="text-sm">đ</span>
-                           </span>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="mt-10 p-6 bg-primary/5 rounded-3xl border border-primary/10">
-                     <h5 className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Mẹo đăng bán
-                     </h5>
-                     <ul className="space-y-3">
-                        <li className="text-[11px] text-slate-600 font-bold leading-relaxed flex items-start gap-2">• Hình ảnh thực tế giúp giao dịch nhanh gấp 2 lần.</li>
-                        <li className="text-[11px] text-slate-600 font-bold leading-relaxed flex items-start gap-2">• Giá cả hợp lý sẽ thu hút nhiều người nhắn tin.</li>
-                     </ul>
-                  </div>
                </div>
             </div>
           </motion.div>

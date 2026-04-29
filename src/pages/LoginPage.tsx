@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Home, 
@@ -12,14 +12,27 @@ import {
 } from 'lucide-react';
 import { AuthIllustration } from '../components/auth/AuthIllustration';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 export const LoginPage = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
+  const { user, role, loading: globalLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState(() => localStorage.getItem('rememberedPhone') || '');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('rememberedPhone'));
+
+  // Tự động điều hướng khi đã đăng nhập và lấy xong role
+  useEffect(() => {
+    if (user && !globalLoading) {
+      if (role === 'admin') {
+        onNavigate('admin');
+      } else {
+        onNavigate('home');
+      }
+    }
+  }, [user, role, globalLoading, onNavigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +42,7 @@ export const LoginPage = ({ onNavigate }: { onNavigate: (page: string) => void }
     try {
       const formattedPhone = phone.startsWith('0') ? `+84${phone.slice(1)}` : phone.startsWith('+') ? phone : `+84${phone}`;
 
-      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         phone: formattedPhone,
         password,
       });
@@ -43,24 +56,15 @@ export const LoginPage = ({ onNavigate }: { onNavigate: (page: string) => void }
         localStorage.removeItem('rememberedPhone');
       }
 
-      // Kiểm tra role để điều hướng
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user?.id)
-        .single();
-
-      if (profile?.role === 'admin') {
-        onNavigate('admin');
-      } else {
-        onNavigate('home');
-      }
+      // Lưu ý: Không set loading = false ở đây.
+      // Nút sẽ tiếp tục xoay cho đến khi useEffect ở trên tự động chuyển trang.
     } catch (err: any) {
       setError(err.message || 'Đã có lỗi xảy ra khi đăng nhập');
-    } finally {
-      setLoading(false);
+      setLoading(false); // Chỉ tắt loading khi có lỗi
     }
   };
+
+  const isSpinning = loading || (user && globalLoading);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -151,11 +155,11 @@ export const LoginPage = ({ onNavigate }: { onNavigate: (page: string) => void }
             </div>
 
             <button 
-              disabled={loading}
+              disabled={isSpinning}
               className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-4 px-4 rounded-xl transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <span>{loading ? 'Đang đăng nhập...' : 'Đăng nhập ngay'}</span>
-              {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+              <span>{isSpinning ? 'Đang đăng nhập...' : 'Đăng nhập ngay'}</span>
+              {!isSpinning && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
 

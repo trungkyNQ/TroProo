@@ -40,7 +40,7 @@ export const TenantSupportModal = ({
               </div>
               <button 
                 onClick={() => setShowAddRequestModal(false)} 
-                className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+                className="p-2 hover:bg-rose-50 rounded-xl transition-colors text-slate-400 hover:text-rose-500"
               >
                 <X className="w-5 h-5" />
               </button>

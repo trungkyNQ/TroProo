@@ -142,20 +142,15 @@ export const TenantsTab = ({ contractsData, setActiveTab, loading = false }: Ten
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowTenantProfile(false)}>
               <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 {/* Modal Header */}
-                <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-8 flex-shrink-0">
-                  <button onClick={() => setShowTenantProfile(false)} className="absolute top-4 right-4 p-2 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
-                  <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl flex-shrink-0">
-                      <img src={selectedTenant.avatar} alt={selectedTenant.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-white font-display">{selectedTenant.name}</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] font-black text-primary bg-primary/20 px-3 py-1 rounded-full uppercase tracking-widest">{selectedTenant.room}</span>
-                        {selectedTenant.gender && <span className="text-[10px] font-bold text-white/60 bg-white/10 px-3 py-1 rounded-full">{selectedTenant.gender}</span>}
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 rounded-t-3xl bg-slate-50/50 relative flex-shrink-0">
+                  <h2 className="text-xl font-bold flex items-center gap-3">
+                    <span className="text-slate-900">{selectedTenant.name}</span>
+                    <span className="px-2.5 py-1 text-sm font-black uppercase tracking-widest text-primary bg-primary/10 rounded-lg">{selectedTenant.room}</span>
+                    {selectedTenant.gender && <span className="px-2.5 py-1 text-sm font-bold text-slate-500 bg-slate-100 rounded-lg">{selectedTenant.gender}</span>}
+                  </h2>
+                  <button onClick={() => setShowTenantProfile(false)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors absolute right-4 top-1/2 -translate-y-1/2">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
 
                 {/* Modal Body - Scrollable */}

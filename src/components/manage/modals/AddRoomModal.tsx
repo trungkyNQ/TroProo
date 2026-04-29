@@ -96,7 +96,7 @@ export const AddRoomModal = ({
           >
             {/* ... header ... content ... footer ... */}
             {/* Modal Header */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-3">
                 {step === 2 && (
                   <button onClick={() => setStep(1)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-700">
@@ -112,7 +112,7 @@ export const AddRoomModal = ({
                   </p>
                 </div>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-700">
+              <button onClick={onClose} className="p-2 hover:bg-rose-50 rounded-xl transition-colors text-slate-400 hover:text-rose-500">
                 <X className="w-5 h-5" />
               </button>
             </div>

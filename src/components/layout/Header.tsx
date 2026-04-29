@@ -3,6 +3,8 @@ import { Home, User, LogOut } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { NotificationBell } from '../shared/NotificationBell';
 
+import { useAuth } from '../../context/AuthContext';
+
 export type Page = 'home' | 'login' | 'register' | 'store' | 'manage' | 'contact' | 'search' | 'tenant' | 'admin' | 'listing-detail' | 'my-store';
 
 interface HeaderProps {
@@ -14,22 +16,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ user, onLogout, onNavigate, activePath, children }: HeaderProps) => {
-  const [dbRole, setDbRole] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (user?.id) {
-      import('../../lib/supabase').then(({ supabase }) => {
-        supabase.from('profiles').select('role').eq('id', user.id).single()
-          .then(({ data, error }) => {
-             if (!error && data) setDbRole(data.role);
-          });
-      });
-    } else {
-      setDbRole(null);
-    }
-  }, [user?.id]);
-
-  const currentRole = dbRole || user?.user_metadata?.role;
+  const { role: currentRole } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-10 py-3">

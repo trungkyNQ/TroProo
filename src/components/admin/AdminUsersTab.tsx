@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Users, Search, Edit, Trash2, Loader2, Phone, Mail, Shield, CheckCircle, Eye, Plus, Home, UserCheck, XCircle
+  Users, Search, Edit, Trash2, Loader2, Phone, Mail, Shield, CheckCircle, Eye, Plus, Home, UserCheck, XCircle, PhoneCall
 } from 'lucide-react';
 
 interface AdminUsersTabProps {
@@ -186,26 +186,28 @@ export const AdminUsersTab = ({
 
                 {/* MODAL SỬA NGƯỜI DÙNG */}
                 {editingUser && (
-                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                      <div className="p-6 border-b border-slate-100">
+                      <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50 relative">
                         <h3 className="text-xl font-bold text-slate-900">Sửa thông tin người dùng</h3>
-                        <p className="text-xs text-slate-400 mt-1">ID: {editingUser.id}</p>
+                        <button onClick={() => setEditingUser(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
+                          <XCircle className="w-5 h-5" />
+                        </button>
                       </div>
                       <div className="p-6 space-y-4">
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Họ và tên</label>
-                          <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none" 
+                          <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5">Họ và tên</label>
+                          <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all"
                             value={userEditForm.full_name} onChange={e => setUserEditForm({...userEditForm, full_name: e.target.value})} />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Số điện thoại</label>
-                          <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none" 
+                          <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5">Số điện thoại</label>
+                          <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all"
                             value={userEditForm.phone} onChange={e => setUserEditForm({...userEditForm, phone: e.target.value})} />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Vai trò hệ thống</label>
-                          <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none appearance-none"
+                          <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5">Vai trò hệ thống</label>
+                          <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all appearance-none"
                             value={userEditForm.role} onChange={e => setUserEditForm({...userEditForm, role: e.target.value as any})}>
                             <option value="tenant">Tenant (Người thuê)</option>
                             <option value="landlord">Landlord (Chủ trọ)</option>
@@ -214,8 +216,8 @@ export const AdminUsersTab = ({
                         </div>
                       </div>
                       <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                        <button onClick={() => setEditingUser(null)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-lg">Hủy</button>
-                        <button onClick={handleSaveUserEdit} disabled={actionLoading === 'saving-user'} className="px-4 py-2 text-sm font-bold bg-primary text-white hover:bg-primary-hover rounded-lg flex items-center gap-2">
+                        <button onClick={() => setEditingUser(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Hủy</button>
+                        <button onClick={handleSaveUserEdit} disabled={actionLoading === 'saving-user'} className="px-6 py-2.5 text-sm font-black bg-primary text-white hover:bg-primary-hover rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95">
                           {actionLoading === 'saving-user' && <Loader2 className="w-4 h-4 animate-spin"/>}
                           Lưu chỉnh sửa
                         </button>
@@ -227,147 +229,126 @@ export const AdminUsersTab = ({
 
                 {/* MODAL XEM CHI TIẾT NGƯỜI DÙNG */}
                 {viewingUser && (
-                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-                    <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl my-8 relative">
-                      <div className="relative h-28 bg-gradient-to-r from-primary to-blue-600">
-                        <button onClick={() => setViewingUser(null)} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors z-10">
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" onClick={() => setViewingUser(null)}>
+                    <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                      {/* Modal Header */}
+                      <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 rounded-t-3xl bg-slate-50/50 relative flex-shrink-0">
+                        <h2 className="text-xl font-bold flex items-center gap-3">
+                          <span className="text-slate-900">Chi tiết người dùng</span>
+                          <span className="px-2.5 py-1 text-sm font-black uppercase tracking-widest text-primary bg-primary/10 rounded-lg">
+                            {viewingUser.role}
+                          </span>
+                        </h2>
+                        <button onClick={() => setViewingUser(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors absolute right-4 top-1/2 -translate-y-1/2">
                           <XCircle className="w-6 h-6" />
                         </button>
                       </div>
-                      <div className="px-6 md:px-8 pb-8 relative">
-                        <div className="absolute -top-14 left-6 md:left-8 w-28 h-28 rounded-3xl bg-white p-1 shadow-xl">
-                          <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center text-3xl font-black text-primary overflow-hidden">
-                            {viewingUser.avatar_url ? (
-                              <img src={viewingUser.avatar_url} className="w-full h-full object-cover" alt="avatar" />
-                            ) : (
-                              getInitials(viewingUser.full_name)
-                            )}
+
+                      {/* Modal Body - Scrollable */}
+                      <div className="overflow-y-auto flex-1 p-8 space-y-6">
+                        
+                        {/* Section: Liên hệ & Cơ bản */}
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <Phone className="w-3.5 h-3.5" />Thông tin cơ bản
+                          </p>
+                          <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Số điện thoại</span>
+                              <span className="font-bold text-slate-900">{viewingUser.phone || <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Zalo</span>
+                              <span className="font-bold text-slate-900">{viewingUser.zalo_phone || <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Giới tính</span>
+                              <span className="font-bold text-slate-900">{viewingUser.gender === 'male' ? 'Nam' : viewingUser.gender === 'female' ? 'Nữ' : viewingUser.gender === 'other' ? 'Khác' : <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm gap-4">
+                              <span className="text-slate-500 font-medium flex-shrink-0">Thường trú</span>
+                              <span className="font-bold text-slate-900 text-right">{viewingUser.permanent_address || <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Ngày sinh</span>
+                              <span className="font-bold text-slate-900">{viewingUser.birth_date ? formatDate(viewingUser.birth_date).split(' ')[0] : <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Ngày gia nhập</span>
+                              <span className="font-bold text-slate-900">{formatDate(viewingUser.created_at)}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="mt-16">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-2xl font-bold text-slate-900">{viewingUser.full_name || '\u00A0'}</h3>
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">{viewingUser.role}</span>
-                          </div>
-                          <p className="text-slate-500 text-sm mt-1">ID: {viewingUser.id}</p>
-                          
-                          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-                            {/* CỘT TRÁI */}
-                            <div className="space-y-6">
-                                {/* Thông tin cơ bản */}
-                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        Thông tin cơ bản
-                                    </h4>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số điện thoại</p>
-                                            <p className="text-sm font-bold text-slate-900">{viewingUser.phone || '\u00A0'}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngày sinh</p>
-                                                <p className="text-sm font-bold text-slate-900">{viewingUser.birth_date ? formatDate(viewingUser.birth_date).split(' ')[0] : '\u00A0'}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Giới tính</p>
-                                                <p className="text-sm font-bold text-slate-900">{viewingUser.gender === 'male' ? 'Nam' : viewingUser.gender === 'female' ? 'Nữ' : viewingUser.gender === 'other' ? 'Khác' : '\u00A0'}</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Địa chỉ thường trú</p>
-                                            <p className="text-sm font-bold text-slate-900">{viewingUser.permanent_address || '\u00A0'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngày gia nhập</p>
-                                            <p className="text-sm font-bold text-slate-900">{formatDate(viewingUser.created_at)}</p>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Liên hệ khẩn cấp */}
-                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        Liên hệ khác
-                                    </h4>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Zalo</p>
-                                            <p className="text-sm font-bold text-slate-900">{viewingUser.zalo_phone || '\u00A0'}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Người LH khẩn cấp</p>
-                                                <p className="text-sm font-bold text-slate-900 line-clamp-1">{viewingUser.emergency_contact_name || '\u00A0'}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">SĐT Khẩn cấp</p>
-                                                <p className="text-sm font-bold text-slate-900">{viewingUser.emergency_contact_phone || '\u00A0'}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        {/* Section: Định danh */}
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <Shield className="w-3.5 h-3.5" />Định danh (CCCD/CMND)
+                          </p>
+                          <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Số CCCD</span>
+                              <span className="font-bold text-slate-900 font-mono tracking-wider">{viewingUser.id_card_number || <span className="text-slate-400 font-normal italic tracking-normal">Chưa có</span>}</span>
                             </div>
-
-                            {/* CỘT PHẢI */}
-                            <div className="space-y-6">
-                                {/* Định danh */}
-                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        Định danh (CCCD/CMND)
-                                    </h4>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số CCCD/CMND</p>
-                                            <p className="text-sm font-bold text-slate-900">{viewingUser.id_card_number || '\u00A0'}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngày cấp</p>
-                                                <p className="text-sm font-bold text-slate-900">{viewingUser.id_card_date ? formatDate(viewingUser.id_card_date).split(' ')[0] : '\u00A0'}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Nơi cấp</p>
-                                                <p className="text-sm font-bold text-slate-900">{viewingUser.id_card_place || '\u00A0'}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Ngân hàng */}
-                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        Thông tin thanh toán
-                                    </h4>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ngân hàng</p>
-                                            <p className="text-sm font-bold text-slate-900">{viewingUser.bank_name || '\u00A0'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số tài khoản</p>
-                                            <p className="text-sm font-bold text-slate-900 font-mono tracking-wider">{viewingUser.bank_account_number || '\u00A0'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Chủ tài khoản</p>
-                                            <p className="text-sm font-bold text-slate-900 uppercase">{viewingUser.bank_account_name || '\u00A0'}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Ngày cấp</span>
+                              <span className="font-bold text-slate-900">{viewingUser.id_card_date ? formatDate(viewingUser.id_card_date).split(' ')[0] : <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
                             </div>
-                            
-                          </div>
-                          
-                          <div className="mt-8 flex gap-3 pt-6 border-t border-slate-100">
-                            <button onClick={() => { handleEditUserClick(viewingUser); setViewingUser(null); }} className="flex-1 bg-primary text-white font-bold py-3 rounded-2xl hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
-                              Chỉnh sửa hồ sơ cơ bản
-                            </button>
-                            <button onClick={() => setViewingUser(null)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl hover:bg-slate-200 transition-colors">
-                              Đóng
-                            </button>
+                            <div className="flex justify-between text-sm gap-4">
+                              <span className="text-slate-500 font-medium flex-shrink-0">Nơi cấp</span>
+                              <span className="font-bold text-slate-900 text-right">{viewingUser.id_card_place || <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
                           </div>
                         </div>
+
+                        {/* Section: Ngân hàng */}
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <UserCheck className="w-3.5 h-3.5" />Thông tin thanh toán
+                          </p>
+                          <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Ngân hàng</span>
+                              <span className="font-bold text-slate-900">{viewingUser.bank_name || <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Số tài khoản</span>
+                              <span className="font-bold text-slate-900 font-mono tracking-wider">{viewingUser.bank_account_number || <span className="text-slate-400 font-normal italic tracking-normal">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Chủ tài khoản</span>
+                              <span className="font-bold text-slate-900 uppercase">{viewingUser.bank_account_name || <span className="text-slate-400 font-normal italic normal-case">Chưa có</span>}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section: Liên hệ khẩn cấp */}
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <PhoneCall className="w-3.5 h-3.5" />Liên hệ khẩn cấp
+                          </p>
+                          <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Người liên hệ</span>
+                              <span className="font-bold text-slate-900">{viewingUser.emergency_contact_name || <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500 font-medium">SĐT Khẩn cấp</span>
+                              <span className="font-bold text-slate-900">{viewingUser.emergency_contact_phone || <span className="text-slate-400 font-normal italic">Chưa có</span>}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="border-t border-slate-100 p-6 flex gap-3 flex-shrink-0">
+                        <button onClick={() => { handleEditUserClick(viewingUser); setViewingUser(null); }} className="flex-1 py-3 rounded-xl border border-primary/20 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2">
+                          <Edit className="w-4 h-4" />Sửa quyền / Cơ bản
+                        </button>
+                        <button onClick={() => setViewingUser(null)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+                          Đóng
+                        </button>
                       </div>
                     </div>
                   </div>

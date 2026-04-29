@@ -808,7 +808,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
 
   const chartData = calculateMonthlyRevenue();
 
-  const navItems = [
+  const navItems: { id: string; label: string; icon: any; badge?: number | string }[] = [
     { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
     { id: 'rooms', label: 'Danh sách phòng', icon: HomeIcon },
     { id: 'tenants', label: 'Người thuê', icon: Users },

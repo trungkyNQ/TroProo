@@ -62,7 +62,7 @@ export const EditRoomModal = ({
                   Cập nhật thông tin, giá thuê và chi phí phụ
                 </p>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-700">
+              <button onClick={onClose} className="p-2 hover:bg-rose-50 rounded-xl transition-colors text-slate-400 hover:text-rose-500">
                 <X className="w-5 h-5" />
               </button>
             </div>
