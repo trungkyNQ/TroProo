@@ -124,9 +124,24 @@ export const AdminRiskTab = ({ risks, loading, onNavigateToRoom }: AdminRiskTabP
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
         <div className="flex border-b border-slate-200 px-6 shrink-0 bg-slate-50/50">
-          <div className="py-4 font-black text-sm uppercase text-slate-900 tracking-wider">
-            Danh sách cảnh báo hệ thống
-          </div>
+          {[
+            { id: 'all', label: 'Tất cả' },
+            { id: 'cao', label: 'Rủi ro cao' },
+            { id: 'dien', label: 'Cảnh báo điện' },
+            { id: 'nuoc', label: 'Cảnh báo nước' }
+          ].map((tab) => (
+            <button 
+              key={tab.id}
+              onClick={() => setFilter(tab.id as any)}
+              className={`py-4 px-6 border-b-2 font-black text-sm whitespace-nowrap uppercase transition-all ${
+                filter === tab.id 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent text-slate-500 hover:text-slate-700 font-bold'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
         <div className="overflow-auto flex-1">
           {loading ? (

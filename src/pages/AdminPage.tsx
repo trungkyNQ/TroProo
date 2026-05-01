@@ -1222,7 +1222,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
             {currentView === 'reports' && (
             <AdminReportsTab 
               reportFilter={reportFilter} setReportFilter={setReportFilter}
-              filteredReports={filteredReports} loading={loading} actionLoading={actionLoading}
+              filteredReports={filteredReports} allReports={reportsList} loading={loading} actionLoading={actionLoading}
               handleUpdateReportStatus={handleUpdateReportStatus} handleDeleteReport={handleDeleteReport}
               setHighlightedListingId={setHighlightedListingId} setCurrentView={setCurrentView}
               getInitials={getInitials} formatDate={formatDate}

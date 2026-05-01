@@ -22,16 +22,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-
-// Fix Leaflet default marker icon (broken by bundlers)
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
 
 interface ListingDetailPageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -507,28 +497,20 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
                   <span className="ml-3 text-gray-500">Đang tải bản đồ...</span>
                 </div>
               ) : mapCenter ? (
-                <MapContainer
-                  center={mapCenter}
-                  zoom={16}
-                  scrollWheelZoom={false}
-                  className="rounded-xl"
-                  style={{ height: '350px', width: '100%' }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <Marker position={mapCenter}>
-                    <Popup>
-                      <div className="text-center">
-                        <strong className="block text-sm">{listing.title}</strong>
-                        <span className="text-xs text-gray-500">
-                          {listing.street ? `${listing.street}, ` : ''}{listing.location}
-                        </span>
-                      </div>
-                    </Popup>
-                  </Marker>
-                </MapContainer>
+                <div className="rounded-xl overflow-hidden h-[350px] border border-gray-100 shadow-inner relative group">
+                  <iframe 
+                    width="100%" 
+                    height="100%" 
+                    frameBorder="0" 
+                    scrolling="no" 
+                    marginHeight={0} 
+                    marginWidth={0} 
+                    src={`https://maps.google.com/maps?q=${mapCenter[0]},${mapCenter[1]}&z=16&output=embed`}
+                    className="border-0 transition-opacity duration-300"
+                  ></iframe>
+                  {/* Overlay to catch clicks and redirect to full map if needed, or just for styling */}
+                  <div className="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-indigo-500/20 transition-all rounded-xl"></div>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-[200px] bg-gray-50 rounded-xl">
                   <div className="text-center text-gray-400">

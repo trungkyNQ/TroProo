@@ -8,6 +8,7 @@ interface AdminReportsTabProps {
   reportFilter: 'all' | 'pending' | 'resolved';
   setReportFilter: (filter: 'all' | 'pending' | 'resolved') => void;
   filteredReports: any[];
+  allReports: any[];
   loading: boolean;
   actionLoading: string | null;
   handleUpdateReportStatus: (id: string, status: 'resolved') => void;
@@ -19,10 +20,16 @@ interface AdminReportsTabProps {
 }
 
 export const AdminReportsTab = ({ 
-  reportFilter, setReportFilter, filteredReports, loading, actionLoading,
+  reportFilter, setReportFilter, filteredReports, allReports, loading, actionLoading,
   handleUpdateReportStatus, handleDeleteReport, setHighlightedListingId, setCurrentView,
   getInitials, formatDate
 }: AdminReportsTabProps) => {
+  const stats = {
+    total: allReports.length,
+    pending: allReports.filter(r => r.status === 'pending').length,
+    resolved: allReports.filter(r => r.status === 'resolved').length
+  };
+
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col w-full h-full">
@@ -40,7 +47,7 @@ export const AdminReportsTab = ({
             </div>
             <div>
               <p className="text-sm text-slate-500 font-medium whitespace-nowrap uppercase tracking-tighter">Tổng báo cáo</p>
-              <p className="text-2xl font-black text-slate-900">{loading ? '-' : filteredReports.length + (reportFilter === 'all' ? 0 : 5)}</p> {/* Ước tính nếu không có allReports */}
+              <p className="text-2xl font-black text-slate-900">{loading ? '-' : stats.total}</p>
             </div>
           </div>
           
@@ -51,7 +58,7 @@ export const AdminReportsTab = ({
             </div>
             <div>
               <p className="text-sm text-slate-500 font-medium whitespace-nowrap uppercase tracking-tighter">Chờ xử lý</p>
-              <p className="text-2xl font-black text-slate-900">{loading ? '-' : (reportFilter === 'pending' ? filteredReports.length : '...')}</p>
+              <p className="text-2xl font-black text-slate-900">{loading ? '-' : stats.pending}</p>
             </div>
           </div>
 
@@ -62,7 +69,7 @@ export const AdminReportsTab = ({
             </div>
             <div>
               <p className="text-sm text-slate-500 font-medium whitespace-nowrap uppercase tracking-tighter">Đã giải quyết</p>
-              <p className="text-2xl font-black text-slate-900">{loading ? '-' : (reportFilter === 'resolved' ? filteredReports.length : '...')}</p>
+              <p className="text-2xl font-black text-slate-900">{loading ? '-' : stats.resolved}</p>
             </div>
           </div>
         </div>
@@ -129,9 +136,11 @@ export const AdminReportsTab = ({
                               </td>
                               <td className="px-6 py-4">
                                 <span className="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-500 uppercase">
-                                  {r.target_type === 'listing' ? 'Tin đăng' : 'Người dùng'}
+                                  {r.target_type === 'listing' ? 'Tin đăng' : r.target_type === 'contact_form' ? 'Liên hệ' : 'Người dùng'}
                                 </span>
-                                <p className="text-[10px] text-slate-400 font-mono mt-1">{r.target_id.substring(0,8)}...</p>
+                                {r.target_type !== 'contact_form' && (
+                                  <p className="text-[10px] text-slate-400 font-mono mt-1">{r.target_id.substring(0,8)}...</p>
+                                )}
                               </td>
                               <td className="px-6 py-4">
                                 {r.status === 'pending' ? (

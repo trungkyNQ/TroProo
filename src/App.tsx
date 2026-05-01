@@ -16,6 +16,13 @@ import { PaymentResultPage } from './pages/PaymentResultPage';
 import { StoreDetailPage } from './pages/StoreDetailPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { MyStorePage } from './pages/MyStorePage';
+import { AboutPage } from './pages/AboutPage';
+import { GuidePage } from './pages/GuidePage';
+import { PricingPage } from './pages/PricingPage';
+import { RulesPage } from './pages/RulesPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { ComplaintsPage } from './pages/ComplaintsPage';
+import { FAQPage } from './pages/FAQPage';
 
 import { MainLayout } from './components/layout/MainLayout';
 import { AuthLayout } from './components/layout/AuthLayout';
@@ -125,6 +132,10 @@ const LegacyPageWrapper = ({ Component, requireAuth, allowedRoles }: { Component
 export default function App() {
   const location = useLocation();
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
@@ -141,6 +152,13 @@ export default function App() {
           <Route path="/store" element={<LegacyPageWrapper Component={StorePage} />} />
           <Route path="/search" element={<LegacyPageWrapper Component={SearchPage} />} />
           <Route path="/contact" element={<LegacyPageWrapper Component={ContactPage} />} />
+          <Route path="/about" element={<LegacyPageWrapper Component={AboutPage} />} />
+          <Route path="/guide" element={<LegacyPageWrapper Component={GuidePage} />} />
+          <Route path="/pricing" element={<LegacyPageWrapper Component={PricingPage} />} />
+          <Route path="/rules" element={<LegacyPageWrapper Component={RulesPage} />} />
+          <Route path="/privacy" element={<LegacyPageWrapper Component={PrivacyPage} />} />
+          <Route path="/complaints" element={<LegacyPageWrapper Component={ComplaintsPage} />} />
+          <Route path="/faq" element={<LegacyPageWrapper Component={FAQPage} />} />
           <Route path="/listing-detail" element={<LegacyPageWrapper Component={ListingDetailPage} />} />
           <Route path="/store-detail" element={<LegacyPageWrapper Component={StoreDetailPage} />} />
           <Route path="/checkout" element={<LegacyPageWrapper Component={CheckoutPage} />} />
