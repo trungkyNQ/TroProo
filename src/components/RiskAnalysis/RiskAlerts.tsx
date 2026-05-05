@@ -11,7 +11,7 @@ import {
   Trash2,
   Filter,
   Download,
-  MoreVertical,
+  Eye,
   ShieldAlert,
   Clock
 } from 'lucide-react';
@@ -226,7 +226,7 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
                           className="text-slate-300 hover:text-primary transition-colors p-2"
                           title="Xem chi tiết phân tích"
                         >
-                          <MoreVertical className="w-5 h-5" />
+                          <Eye className="w-5 h-5" />
                         </button>
                       </div>
                     </td>

@@ -88,6 +88,10 @@ export const CreateInvoiceModal = ({ show, onClose, roomsData, preSelectedRoomId
       service_fee: serviceFee,
       electricity_usage: elecUsage,
       water_usage: waterUsage,
+      electricity_old: oldElec,
+      electricity_new: newElec,
+      water_old: oldWater,
+      water_new: newWater,
       amount: finalAmount,
       status: 'unpaid'
     });

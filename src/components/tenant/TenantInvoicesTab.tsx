@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Wallet, Info, FileText, CheckCircle, CreditCard, ChevronRight } from 'lucide-react';
+import { Wallet, Eye, FileText, CheckCircle, CreditCard, ChevronRight } from 'lucide-react';
 
 interface TenantInvoicesTabProps {
   invoicesData: any[];
@@ -86,7 +86,7 @@ export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice }:
                           className="p-2 text-slate-400 hover:text-primary bg-slate-50 hover:bg-primary/10 rounded-xl transition-colors"
                           title="Xem chi tiết"
                         >
-                          <Info className="w-5 h-5" />
+                          <Eye className="w-5 h-5" />
                         </button>
                         
                         {inv.status === 'unpaid' && (

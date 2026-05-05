@@ -337,9 +337,18 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
           action_url: '/tenant?tab=invoices'
         });
       }
+
+      // Cập nhật chỉ số điện nước mới nhất cho Phòng để tháng sau tự động lấy làm số CŨ
+      if (invoiceData.room_id) {
+        await supabase.from('rooms').update({
+          initial_electricity_number: invoiceData.electricity_new,
+          initial_water_number: invoiceData.water_new
+        }).eq('id', invoiceData.room_id);
+      }
       
       setShowCreateInvoiceModal(false);
       await fetchInvoices(); // Only need to refresh invoices
+      await fetchRooms(); // Refresh rooms to get new initial numbers
       
       // Chạy nền thuật toán dự đoán AI mỗi khi chốt Hóa đơn xong
       if (invoiceData.room_id) {

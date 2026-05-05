@@ -13,9 +13,7 @@ import {
 import Messaging from '../shared/Messaging';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
-
-
-interface InvoicesTabProps {
+import { InvoiceDetailModal } from '../tenant/modals/InvoiceDetailModal';interface InvoicesTabProps {
   invoicesData: any[];
   roomsData: any[];
   contractsData: any[];
@@ -29,6 +27,7 @@ interface InvoicesTabProps {
 export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, onOpenCreateInvoice, onCreateInvoice, onUpdateStatus, onRefresh }: InvoicesTabProps) => {
   const { showToast } = useToast();
   const [deletingInvoice, setDeletingInvoice] = useState<any>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const invoices = invoicesData.map(inv => ({
     id: inv.id,
@@ -43,7 +42,8 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, 
     statusColor: inv.status === 'paid' ? 'bg-green-100 text-green-700' : 
                  inv.status === 'pending_verification' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700',
     amountValue: inv.amount,
-    due_date_raw: inv.due_date ? inv.due_date.split('T')[0] : ''
+    due_date_raw: inv.due_date ? inv.due_date.split('T')[0] : '',
+    raw: inv
   }));
 
   const executeDeleteInvoice = async () => {
@@ -355,6 +355,14 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, 
                           </td>
                           <td className="px-8 py-6 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => setViewingInvoice(inv.raw)}
+                                className="p-2 text-slate-400 hover:text-primary bg-slate-50 hover:bg-primary/10 rounded-xl transition-colors"
+                                title="Xem chi tiết"
+                              >
+                                <Eye className="w-5 h-5" />
+                              </button>
+                              
                               {inv.status === 'pending_verification' && (
                                 <button
                                   type="button"
@@ -382,11 +390,6 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, 
                                     <Trash2 className="w-5 h-5" />
                                   </button>
                                 </>
-                              )}
-                              {inv.status !== 'unpaid' && (
-                                <button type="button" className="p-2 text-slate-400 hover:text-primary transition-colors rounded-full hover:bg-slate-100">
-                                  <MoreHorizontal className="w-5 h-5" />
-                                </button>
                               )}
                             </div>
                           </td>
@@ -445,6 +448,15 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, 
               </motion.div>
             )}
           </AnimatePresence>
+
+          {viewingInvoice && (
+            <InvoiceDetailModal
+              show={true}
+              onClose={() => setViewingInvoice(null)}
+              invoice={viewingInvoice}
+              hideAlerts={true}
+            />
+          )}
     </>
   );
 };

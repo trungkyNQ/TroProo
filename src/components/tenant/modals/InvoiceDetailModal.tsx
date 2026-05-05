@@ -9,9 +9,10 @@ interface InvoiceDetailModalProps {
   invoice: any;
   onPay?: () => void;
   loading?: boolean;
+  hideAlerts?: boolean;
 }
 
-export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading }: InvoiceDetailModalProps) => {
+export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading, hideAlerts }: InvoiceDetailModalProps) => {
   const [alerts, setAlerts] = React.useState<any[]>([]);
 
   React.useEffect(() => {
@@ -168,7 +169,7 @@ export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading }: I
             </div>
 
             {/* AI Alert Section */}
-            {alerts && alerts.length > 0 && (() => {
+            {!hideAlerts && alerts && alerts.length > 0 && (() => {
               const hasHighRisk = alerts.some((a: any) => a.risk_level === 'cao');
               const hasMedRisk = alerts.some((a: any) => a.risk_level === 'trung_binh');
               const overallRisk = hasHighRisk ? 'cao' : hasMedRisk ? 'trung_binh' : 'thap';
