@@ -20,6 +20,17 @@ interface AccountTabProps {
   supabase: any;
 }
 
+const InputField = ({ label, icon: Icon, type = 'text', placeholder = '', value, onChange }: any) => (
+  <div className="flex flex-col gap-2">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <div className="relative">
+      {Icon && <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />}
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className={`w-full rounded-2xl border border-slate-200 bg-slate-50 font-semibold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 p-4 ${Icon ? 'pl-11' : ''} transition-all outline-none text-sm`} />
+    </div>
+  </div>
+);
+
 export const AccountTab = ({ user, roomsData, contractsData, supabase }: AccountTabProps) => {
   const [profileForm, setProfileForm] = useState({
     full_name: '', phone: '', gender: '', birth_date: '',
@@ -35,17 +46,6 @@ export const AccountTab = ({ user, roomsData, contractsData, supabase }: Account
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  const InputField = ({ label, icon: Icon, type = 'text', placeholder = '', value, onChange }: any) => (
-    <div className="flex flex-col gap-2">
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-      <div className="relative">
-        {Icon && <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />}
-        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className={`w-full rounded-2xl border border-slate-200 bg-slate-50 font-semibold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 p-4 ${Icon ? 'pl-11' : ''} transition-all outline-none text-sm`} />
-      </div>
-    </div>
-  );
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();

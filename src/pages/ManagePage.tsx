@@ -254,7 +254,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
   const fetchInvoices = async () => {
     setLoadingInvoices(true);
     try {
-      const { data } = await supabase.from('invoices').select('*, profiles!invoices_tenant_id_fkey(full_name, avatar_url, phone), rooms(title)').eq('owner_id', user?.id);
+      const { data } = await supabase.from('invoices').select('*, profiles!invoices_tenant_id_fkey(full_name, avatar_url, phone), rooms(title)').eq('owner_id', user?.id).order('created_at', { ascending: false });
       setInvoicesData(data || []);
     } catch (err) {
       console.error('Error fetching invoices:', err);
@@ -917,6 +917,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
               }}
               onCreateInvoice={handleAddInvoice}
               onUpdateStatus={handleUpdateInvoiceStatus}
+              onRefresh={fetchInvoices}
             />
           )}
 

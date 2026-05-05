@@ -1,8 +1,9 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
-  FileText, Clock, Building, Calendar, ShieldCheck
+  FileText, Clock, Building, Calendar, ShieldCheck, Eye, X, Loader2
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface TenantContractsTabProps {
   tenantRooms: any[];
@@ -10,6 +11,58 @@ interface TenantContractsTabProps {
 }
 
 export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContractsTabProps) => {
+  const [viewingContract, setViewingContract] = useState<any | null>(null);
+
+  const formatPhone = (phone?: string) => {
+    if (!phone) return '...........................................';
+    return phone.startsWith('+84') ? '0' + phone.slice(3) : phone;
+  };
+
+  const handleViewContract = async (room: any) => {
+    setViewingContract({ roomData: room, isLoading: true });
+    
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id;
+
+      let owner = null;
+      let tenant = null;
+
+      if (room.owner_id) {
+        const { data: ownerData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', room.owner_id)
+          .single();
+        owner = ownerData;
+      }
+
+      if (userId) {
+        const { data: tenantData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        tenant = tenantData;
+      }
+        
+      setViewingContract({
+        roomData: room,
+        contractData: {
+          id: room.contract_id,
+          start_date: room.contract_start,
+          end_date: room.contract_end,
+          deposit: room.deposit,
+          owner: owner,
+          tenant: tenant
+        },
+        isLoading: false
+      });
+    } catch (err) {
+      console.error(err);
+      setViewingContract(null);
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -52,11 +105,16 @@ export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContract
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-2">
-                  <span className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-200 shadow-sm flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" /> Đã ký điện tử
+                <div className="flex flex-row md:flex-col items-center md:items-stretch justify-between md:justify-center gap-2 min-w-[140px]">
+                  <span className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-200 shadow-sm w-full">
+                    <ShieldCheck className="w-4 h-4 shrink-0" /> Đã ký điện tử
                   </span>
-                  <button className="text-sm font-bold text-primary hover:underline">Tải bản PDF</button>
+                  <button 
+                    onClick={() => handleViewContract(room)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-md shadow-orange-200 hover:bg-orange-600 transition-all w-full"
+                  >
+                    <Eye className="w-4 h-4 shrink-0" /> Xem hợp đồng
+                  </button>
                 </div>
               </div>
 
@@ -82,6 +140,121 @@ export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContract
           ))}
         </div>
       )}
+
+      {/* View Details Modal */}
+      <AnimatePresence>
+        {viewingContract && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 font-display">Chi tiết hợp đồng</h3>
+                  <p className="text-sm font-bold text-slate-500">Phòng: {viewingContract.roomData?.title}</p>
+                </div>
+                <button 
+                  onClick={() => setViewingContract(null)}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="p-8 overflow-y-auto bg-slate-50 relative">
+                {viewingContract.isLoading ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm z-10">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  </div>
+                ) : null}
+
+                <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-200 mx-auto max-w-3xl">
+                  <div className="text-center mb-10">
+                    <h4 className="font-bold text-lg">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h4>
+                    <p className="font-bold text-sm underline decoration-slate-400 underline-offset-4 mb-8">Độc lập - Tự do - Hạnh phúc</p>
+                    <h2 className="text-3xl font-black mt-8 mb-2 text-slate-900">HỢP ĐỒNG THUÊ PHÒNG TRỌ</h2>
+                    <p className="text-slate-500 italic text-sm">Mã hợp đồng: {viewingContract.contractData?.id?.toUpperCase()}</p>
+                  </div>
+                  
+                  <div className="space-y-8 text-slate-800 leading-relaxed text-sm md:text-base">
+                    <p className="italic">Hôm nay, ngày {viewingContract.contractData ? new Date(viewingContract.contractData.start_date).getDate() : '...'} tháng {viewingContract.contractData ? new Date(viewingContract.contractData.start_date).getMonth() + 1 : '...'} năm {viewingContract.contractData ? new Date(viewingContract.contractData.start_date).getFullYear() : '...'}, tại địa chỉ phòng trọ, chúng tôi gồm có:</p>
+                    
+                    <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                      <h3 className="font-black text-lg mb-4 text-primary flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">A</span>
+                        BÊN CHO THUÊ (BÊN A)
+                      </h3>
+                      <ul className="space-y-3">
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Họ và tên:</span> <span>{viewingContract.contractData?.owner?.full_name || '...........................................'}</span></li>
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Số CCCD:</span> <span>{viewingContract.contractData?.owner?.id_card_number || '...........................................'}</span></li>
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Số điện thoại:</span> <span>{formatPhone(viewingContract.contractData?.owner?.phone)}</span></li>
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Địa chỉ thường trú:</span> <span>{viewingContract.contractData?.owner?.permanent_address || '...........................................'}</span></li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                      <h3 className="font-black text-lg mb-4 text-primary flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">B</span>
+                        BÊN THUÊ (BÊN B)
+                      </h3>
+                      <ul className="space-y-3">
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Họ và tên:</span> <span>{viewingContract.contractData?.tenant?.full_name || '...........................................'}</span></li>
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Số CCCD:</span> <span>{viewingContract.contractData?.tenant?.id_card_number || '...........................................'}</span></li>
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Số điện thoại:</span> <span>{formatPhone(viewingContract.contractData?.tenant?.phone)}</span></li>
+                        <li className="flex gap-2"><span className="font-bold min-w-[150px]">Địa chỉ thường trú:</span> <span>{viewingContract.contractData?.tenant?.permanent_address || '...........................................'}</span></li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="font-black text-lg mb-4 text-slate-900 border-b border-slate-200 pb-2">NỘI DUNG THỎA THUẬN</h3>
+                      <div className="space-y-4">
+                        <p><strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê phòng trọ mang tên/số: <span className="font-black text-primary">{viewingContract.roomData?.title}</span>.</p>
+                        <p><strong>Điều 2:</strong> Thời gian thuê phòng là từ ngày <strong>{viewingContract.contractData ? new Date(viewingContract.contractData.start_date).toLocaleDateString('vi-VN') : '...'}</strong> đến ngày <strong>{viewingContract.contractData ? new Date(viewingContract.contractData.end_date).toLocaleDateString('vi-VN') : '...'}</strong>.</p>
+                        <p><strong>Điều 3:</strong> Tiền đặt cọc: <span className="font-black">{viewingContract.contractData ? Number(viewingContract.contractData.deposit).toLocaleString() + 'đ' : '...'}</span>.</p>
+                        <p><strong>Điều 4:</strong> Trách nhiệm của các bên:</p>
+                        <ul className="list-disc pl-5 space-y-2 text-slate-600">
+                          <li>Bên A đảm bảo cung cấp đầy đủ tiện ích cơ bản, hỗ trợ sửa chữa các hư hỏng cơ sở vật chất phát sinh không do lỗi của Bên B.</li>
+                          <li>Bên B có trách nhiệm thanh toán tiền thuê phòng đúng hạn, giữ gìn vệ sinh chung, tuân thủ nội quy khu trọ và bảo quản tài sản được giao.</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mt-12 pt-8 text-center border-t border-slate-200">
+                      <div>
+                        <h4 className="font-black text-slate-900">ĐẠI DIỆN BÊN A</h4>
+                        <p className="text-sm text-slate-500 italic mb-24">(Ký và ghi rõ họ tên)</p>
+                        <p className="font-bold text-lg">{viewingContract.contractData?.owner?.full_name}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-900">ĐẠI DIỆN BÊN B</h4>
+                        <p className="text-sm text-slate-500 italic mb-24">(Ký và ghi rõ họ tên)</p>
+                        <p className="font-bold text-lg">{viewingContract.contractData?.tenant?.full_name}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-slate-100 flex gap-3 justify-end items-center mt-auto bg-white">
+                <button 
+                  onClick={() => setViewingContract(null)}
+                  className="px-8 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200"
+                >
+                  Đóng
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

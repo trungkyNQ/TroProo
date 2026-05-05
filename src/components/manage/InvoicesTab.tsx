@@ -11,6 +11,8 @@ import {
   ChevronDown, RefreshCw
 } from 'lucide-react';
 import Messaging from '../shared/Messaging';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/ToastContext';
 
 
 interface InvoicesTabProps {
@@ -21,9 +23,13 @@ interface InvoicesTabProps {
   onOpenCreateInvoice: (roomId?: string) => void;
   onCreateInvoice: (data: any) => void;
   onUpdateStatus: (id: string, status: string) => void;
+  onRefresh?: () => void;
 }
 
-export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, onOpenCreateInvoice, onCreateInvoice, onUpdateStatus }: InvoicesTabProps) => {
+export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, onOpenCreateInvoice, onCreateInvoice, onUpdateStatus, onRefresh }: InvoicesTabProps) => {
+  const { showToast } = useToast();
+  const [deletingInvoice, setDeletingInvoice] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const invoices = invoicesData.map(inv => ({
     id: inv.id,
     tenant: inv.profiles?.full_name || 'N/A',
@@ -35,9 +41,26 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, 
                  inv.status === 'unpaid' ? 'Chưa thanh toán' : 
                  inv.status === 'pending_verification' ? 'Chờ xác nhận' : 'Quá hạn',
     statusColor: inv.status === 'paid' ? 'bg-green-100 text-green-700' : 
-                 inv.status === 'unpaid' ? 'bg-orange-100 text-orange-700' : 
-                 inv.status === 'pending_verification' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+                 inv.status === 'pending_verification' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700',
+    amountValue: inv.amount,
+    due_date_raw: inv.due_date ? inv.due_date.split('T')[0] : ''
   }));
+
+  const executeDeleteInvoice = async () => {
+    if (!deletingInvoice) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('invoices').delete().eq('id', deletingInvoice.id);
+      if (error) throw error;
+      showToast('Xóa hóa đơn thành công', 'success');
+    } catch (err: any) {
+      showToast('Lỗi xóa hóa đơn: ' + err.message, 'error');
+    } finally {
+      setDeletingInvoice(null);
+      setIsSubmitting(false);
+      if (onRefresh) onRefresh();
+    }
+  };
 
   const stats = [
     { label: 'Chưa thanh toán', value: invoicesData.filter(inv => inv.status === 'unpaid').length, sub: 'Cần đốc thúc', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-100' },
@@ -342,17 +365,29 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, 
                                 </button>
                               )}
                               {inv.status === 'unpaid' && (
-                                <button
-                                  type="button"
-                                  onClick={() => onUpdateStatus(inv.id, 'paid')}
-                                  className="px-3 py-1.5 bg-green-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-green-600 transition-colors"
-                                >
-                                  Đã thu tay
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => onUpdateStatus(inv.id, 'paid')}
+                                    className="px-3 py-1.5 bg-green-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-green-600 transition-colors mr-2"
+                                  >
+                                    Đã thu tay
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeletingInvoice(inv)}
+                                    className="p-2 text-slate-400 hover:text-red-500 transition-colors hover:bg-red-50 rounded-full"
+                                    title="Xóa hóa đơn"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
+                              {inv.status !== 'unpaid' && (
+                                <button type="button" className="p-2 text-slate-400 hover:text-primary transition-colors rounded-full hover:bg-slate-100">
+                                  <MoreHorizontal className="w-5 h-5" />
                                 </button>
                               )}
-                              <button type="button" className="p-2 text-slate-400 hover:text-primary transition-colors">
-                                <MoreHorizontal className="w-5 h-5" />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -365,6 +400,51 @@ export const InvoicesTab = ({ invoicesData, roomsData, contractsData, hasRooms, 
               </>)}
             </motion.div>
           )}
+
+          {/* Delete Invoice Modal */}
+          <AnimatePresence>
+            {deletingInvoice && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col"
+                >
+                  <div className="p-6 text-center pt-8">
+                    <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Trash2 className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-2 font-display">Xác nhận xóa hóa đơn?</h3>
+                    <p className="text-slate-500 font-medium">
+                      Hóa đơn của phòng <span className="font-bold text-slate-900">{deletingInvoice.room}</span> sẽ bị xóa vĩnh viễn. Hành động này không thể hoàn tác.
+                    </p>
+                  </div>
+                  
+                  <div className="p-6 bg-slate-50 flex gap-3">
+                    <button 
+                      onClick={() => setDeletingInvoice(null)}
+                      className="flex-1 py-3.5 font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition-colors"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button 
+                      onClick={executeDeleteInvoice}
+                      disabled={isSubmitting}
+                      className="flex-1 py-3.5 bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-200 hover:bg-red-600 transition-all disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Đang xóa...' : 'Xác nhận xóa'}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
     </>
   );
 };

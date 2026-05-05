@@ -9,7 +9,11 @@ interface TenantOverviewTabProps {
   tenantRooms: any[];
   pendingContracts: any[];
   loadingRooms: boolean;
-  monthlyElectric: any[];
+  chartData: any[];
+  avgElec: number;
+  avgWater: number;
+  selectedYear: string;
+  setSelectedYear: (year: string) => void;
   signingContract: string | null;
   handleSignContract: (contract: any) => void;
   handleRejectContract: (contract: any) => void;
@@ -17,10 +21,17 @@ interface TenantOverviewTabProps {
 }
 
 export const TenantOverviewTab = ({ 
-  user, tenantRooms, pendingContracts, loadingRooms, monthlyElectric,
+  user, tenantRooms, pendingContracts, loadingRooms,
+  chartData, avgElec, avgWater, selectedYear, setSelectedYear,
   signingContract, handleSignContract, handleRejectContract, onNavigate
 }: TenantOverviewTabProps) => {
   const currentMonth = new Date().getMonth() + 1;
+  
+  // Find current month value for display if showing current year
+  const currentMonthData = chartData.find(d => d.isCurrent) || chartData[currentMonth - 1] || chartData[0];
+  const displayElec = currentMonthData?.elecValue || 0;
+  const displayWater = currentMonthData?.waterValue || 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -232,27 +243,57 @@ export const TenantOverviewTab = ({
       )}
 
       {/* Usage Charts */}
+      <div className="flex items-center justify-between mb-4 mt-8">
+        <h3 className="text-xl font-black text-slate-900 dark:text-white font-display">Thống kê tiêu thụ năm {selectedYear}</h3>
+        <select 
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+          className="text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-slate-700 dark:text-white shadow-sm"
+        >
+          {[0, 1, 2].map(offset => {
+            const year = new Date().getFullYear() - offset;
+            return <option key={year} value={year.toString()}>Năm {year}</option>
+          })}
+        </select>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-lg font-bold">Tiêu thụ Điện (kWh)</h3>
-              <p className="text-sm text-slate-500">Trung bình 142 kWh/tháng</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white font-display">Điện (kWh)</h3>
+              <p className="text-sm text-slate-500">Trung bình {avgElec} kWh/tháng</p>
             </div>
             <div className="text-right">
-              <span className="text-2xl font-bold text-primary">150</span>
-              <span className="text-sm text-slate-400"> kWh</span>
+              <span className="text-2xl font-black text-amber-500">{displayElec}</span>
+              <span className="text-sm text-slate-400 font-bold"> kWh</span>
             </div>
           </div>
-          <div className="flex items-end justify-between h-48 gap-2">
-            {monthlyElectric.map((item, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 flex-1 group relative">
-                <div 
-                  className={`w-full rounded-t-lg transition-all ${item.isCurrent ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-primary/20 group-hover:bg-primary/40'}`} 
-                  style={{ height: item.height }}
-                ></div>
-                <span className={`text-[10px] font-bold ${item.isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-                  {item.month}
+          
+          <div className="relative h-[250px] w-full flex items-end justify-between px-1 gap-1 md:gap-2">
+            {chartData.map((data, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 flex-1 h-full">
+                <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-t-sm md:rounded-t-lg relative overflow-hidden group h-full">
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${data.elecHeight}%` }}
+                    transition={{ duration: 1, delay: i * 0.1 }}
+                    className="absolute bottom-0 left-0 right-0 bg-amber-500/20 rounded-t-sm md:rounded-t-lg"
+                  />
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${data.elecHeight * 0.7}%` }}
+                    transition={{ duration: 1.2, delay: i * 0.1 }}
+                    className="absolute bottom-0 left-0 right-0 bg-amber-500 rounded-t-sm md:rounded-t-lg shadow-[0_-4px_10px_rgba(245,158,11,0.3)]"
+                  />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 dark:bg-black/20 flex items-center justify-center">
+                    <span className="bg-white text-amber-600 text-[9px] md:text-[10px] font-bold px-1 md:px-2 py-1 rounded shadow-sm">
+                      {data.elecValue}
+                    </span>
+                  </div>
+                </div>
+                <span className={`text-[9px] md:text-[10px] font-bold ${data.isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                  {data.month}
                 </span>
               </div>
             ))}
@@ -262,26 +303,42 @@ export const TenantOverviewTab = ({
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-lg font-bold">Tiêu thụ Nước (m3)</h3>
-              <p className="text-sm text-slate-500">Trung bình 10 m3/tháng</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white font-display">Nước (m3)</h3>
+              <p className="text-sm text-slate-500">Trung bình {avgWater} m3/tháng</p>
             </div>
             <div className="text-right">
-              <span className="text-2xl font-bold text-primary">12</span>
-              <span className="text-sm text-slate-400"> m3</span>
+              <span className="text-2xl font-black text-blue-500">{displayWater}</span>
+              <span className="text-sm text-slate-400 font-bold"> m3</span>
             </div>
           </div>
-          <div className="relative h-48 w-full flex items-end">
-            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-              <path d="M0,80 Q20,20 40,60 T80,30 T100,50 L100,100 L0,100 Z" fill="rgba(255, 140, 0, 0.1)"></path>
-              <path d="M0,80 Q20,20 40,60 T80,30 T100,50" fill="none" stroke="#FF8C00" strokeLinecap="round" strokeWidth="2"></path>
-            </svg>
-            <div className="absolute bottom-[-24px] w-full flex justify-between px-1">
-              {monthlyElectric.map((item, i) => (
-                <span key={i} className={`text-[10px] font-bold ${item.isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-                  {item.month}
+          
+          <div className="relative h-[250px] w-full flex items-end justify-between px-1 gap-1 md:gap-2">
+            {chartData.map((data, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 flex-1 h-full">
+                <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-t-sm md:rounded-t-lg relative overflow-hidden group h-full">
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${data.waterHeight}%` }}
+                    transition={{ duration: 1, delay: i * 0.1 }}
+                    className="absolute bottom-0 left-0 right-0 bg-blue-500/20 rounded-t-sm md:rounded-t-lg"
+                  />
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${data.waterHeight * 0.7}%` }}
+                    transition={{ duration: 1.2, delay: i * 0.1 }}
+                    className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-t-sm md:rounded-t-lg shadow-[0_-4px_10px_rgba(59,130,246,0.3)]"
+                  />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 dark:bg-black/20 flex items-center justify-center">
+                    <span className="bg-white text-blue-600 text-[9px] md:text-[10px] font-bold px-1 md:px-2 py-1 rounded shadow-sm">
+                      {data.waterValue}
+                    </span>
+                  </div>
+                </div>
+                <span className={`text-[9px] md:text-[10px] font-bold ${data.isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                  {data.month}
                 </span>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

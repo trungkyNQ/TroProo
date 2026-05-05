@@ -92,6 +92,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [showInvoiceDetailModal, setShowInvoiceDetailModal] = useState(false);
   const [updatingInvoice, setUpdatingInvoice] = useState(false);
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
 
   // Support Requests states
   const [supportRequestsData, setSupportRequestsData] = useState<any[]>([]);
@@ -147,17 +148,21 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     }
   };
 
-  const handlePayInvoice = async (invoiceId: string) => {
-    if (!window.confirm('Xác nhận bạn đã chuyển khoản số tiền này cho Chủ Trọ?')) return;
+  const handlePayInvoice = (invoiceId: string) => {
+    setPayingInvoiceId(invoiceId);
+  };
+
+  const executePayInvoice = async () => {
+    if (!payingInvoiceId) return;
     setUpdatingInvoice(true);
     try {
       const { error } = await supabase
         .from('invoices')
         .update({ status: 'pending_verification' })
-        .eq('id', invoiceId);
+        .eq('id', payingInvoiceId);
       if (error) throw error;
       
-      const inv = tenantInvoices.find(i => i.id === invoiceId);
+      const inv = tenantInvoices.find(i => i.id === payingInvoiceId);
       if (inv) {
         await supabase.from('notifications').insert({
           receiver_id: inv.owner_id,
@@ -172,6 +177,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
       showToast('Đã xác nhận chuyển khoản. Chờ chủ trọ kiểm tra.', 'success');
       await fetchTenantInvoices();
       setShowInvoiceDetailModal(false);
+      setPayingInvoiceId(null);
     } catch (err) {
       console.error('Error paying invoice:', err);
       showToast('Lỗi khi cập nhật trạng thái.', 'error');
@@ -462,18 +468,49 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     { id: 'contracts', label: 'Hợp đồng', icon: FileText },
     { id: 'invoices', label: 'Hóa đơn', icon: Wallet },
     { id: 'support', label: 'Hỗ trợ', icon: Wrench },
-    { id: 'messages', label: 'Tin nhắn', icon: MessageSquare, badge: 3 },
+    { id: 'messages', label: 'Tin nhắn', icon: MessageSquare },
     { id: 'account', label: 'Tài khoản', icon: User },
   ];
 
-  const monthlyElectric = [
-    { month: 'T5', height: '60%' },
-    { month: 'T6', height: '85%' },
-    { month: 'T7', height: '40%' },
-    { month: 'T8', height: '30%' },
-    { month: 'T9', height: '55%' },
-    { month: 'T10', height: '70%', isCurrent: true },
-  ];
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
+  const usageChartDataRaw = Array.from({ length: 12 }, (_, i) => {
+    const month = i + 1;
+    // Find all invoices for this month/year
+    const monthlyInvoices = tenantInvoices.filter(inv => {
+      const dateStr = inv.due_date || inv.created_at;
+      if (!dateStr) return false;
+      const dateParts = dateStr.split(/[-T ]/);
+      const invYear = parseInt(dateParts[0]);
+      const invMonth = parseInt(dateParts[1]);
+      return invYear === parseInt(selectedYear) && invMonth === month;
+    });
+
+    const totalElec = monthlyInvoices.reduce((sum, inv) => sum + (Number(inv.electricity_usage) || 0), 0);
+    const totalWater = monthlyInvoices.reduce((sum, inv) => sum + (Number(inv.water_usage) || 0), 0);
+
+    return {
+      month: `T${month}`,
+      elecValue: totalElec,
+      waterValue: totalWater,
+      isCurrent: parseInt(selectedYear) === currentYear && month === currentMonth,
+    };
+  });
+
+  const maxElec = Math.max(...usageChartDataRaw.map(d => d.elecValue), 100);
+  const maxWater = Math.max(...usageChartDataRaw.map(d => d.waterValue), 10);
+
+  const usageChartData = usageChartDataRaw.map(d => ({
+    ...d,
+    elecHeight: d.elecValue > 0 ? Math.max((d.elecValue / maxElec) * 100, 2) : 0,
+    waterHeight: d.waterValue > 0 ? Math.max((d.waterValue / maxWater) * 100, 2) : 0,
+  }));
+
+  const avgElec = Math.round(usageChartDataRaw.reduce((sum, d) => sum + d.elecValue, 0) / 12) || 0;
+  const avgWater = Math.round(usageChartDataRaw.reduce((sum, d) => sum + d.waterValue, 0) / 12) || 0;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -519,7 +556,11 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
               tenantRooms={tenantRooms} 
               pendingContracts={pendingContracts} 
               loadingRooms={loadingRooms} 
-              monthlyElectric={monthlyElectric}
+              chartData={usageChartData}
+              avgElec={avgElec}
+              avgWater={avgWater}
+              selectedYear={selectedYear}
+              setSelectedYear={setSelectedYear}
               signingContract={signingContract} 
               handleSignContract={handleSignContract} 
               handleRejectContract={handleRejectContract} 
@@ -620,6 +661,51 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
         submittingRequest={submittingRequest} 
         handleSubmitRequest={handleSubmitRequest} 
       />
+
+      {/* Pay Confirmation Modal */}
+      <AnimatePresence>
+        {payingInvoiceId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
+            >
+              <div className="p-6 md:p-8 text-center">
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Wallet className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2 font-display">Xác nhận đã chuyển khoản</h3>
+                <p className="text-slate-500 font-medium">
+                  Bạn có chắc chắn đã thanh toán số tiền này cho Chủ trọ không? Hành động này sẽ thông báo cho chủ trọ kiểm tra.
+                </p>
+              </div>
+              
+              <div className="p-6 bg-slate-50 flex gap-3">
+                <button 
+                  onClick={() => setPayingInvoiceId(null)}
+                  className="flex-1 py-3.5 font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button 
+                  onClick={executePayInvoice}
+                  disabled={updatingInvoice}
+                  className="flex-1 py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-primary-hover transition-all disabled:opacity-50"
+                >
+                  {updatingInvoice ? 'Đang gửi...' : 'Đã chuyển khoản'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
