@@ -9,6 +9,8 @@ import {
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { ProductModal } from '../components/store/ProductModal';
+import { ConfirmModal } from '../components/shared/ConfirmModal';
+
 
 interface MyStorePageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -115,6 +117,9 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+
 
   // Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -247,15 +252,24 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
   };
 
   // ── Buyer: Cancel order ────────────────────────────────────
-  const handleCancelOrder = async (id: string) => {
-    if (!window.confirm('Bạn muốn hủy đơn hàng này?')) return;
+  const handleCancelOrder = (id: string) => {
+    setCancellingOrderId(id);
+  };
+
+  const executeCancelOrder = async () => {
+    if (!cancellingOrderId) return;
+    const id = cancellingOrderId;
+    setCancellingOrderId(null);
     try {
       const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', id);
       if (error) throw error;
       showToast('Đã hủy đơn hàng thành công', 'success');
       fetchData();
-    } catch { showToast('Không thể hủy đơn hàng.', 'error'); }
+    } catch { 
+      showToast('Không thể hủy đơn hàng.', 'error'); 
+    }
   };
+
 
   // ── Product edit ───────────────────────────────────────────
   const startEditProduct = (product: any) => {
@@ -268,15 +282,24 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
     setShowProductModal(true);
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm('Bạn có chắc muốn xóa vĩnh viễn sản phẩm này?')) return;
+  const handleDeleteProduct = (id: string) => {
+    setDeletingProductId(id);
+  };
+
+  const executeDeleteProduct = async () => {
+    if (!deletingProductId) return;
+    const id = deletingProductId;
+    setDeletingProductId(null);
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       showToast('Đã xóa thành công', 'success');
       fetchData();
-    } catch { showToast('Có lỗi xảy ra', 'error'); }
+    } catch { 
+      showToast('Có lỗi xảy ra', 'error'); 
+    }
   };
+
 
   // ── Order card renderer (shared) ────────────────────────────
   const renderOrderCard = (order: any) => {
@@ -639,6 +662,27 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
         onSuccess={fetchData} 
       />
 
-          </div>
+      {/* Confirmation Modals */}
+      <ConfirmModal
+        show={!!cancellingOrderId}
+        onClose={() => setCancellingOrderId(null)}
+        onConfirm={executeCancelOrder}
+        title="Hủy đơn hàng"
+        message="Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác."
+        confirmText="Hủy đơn ngay"
+        type="danger"
+      />
+
+      <ConfirmModal
+        show={!!deletingProductId}
+        onClose={() => setDeletingProductId(null)}
+        onConfirm={executeDeleteProduct}
+        title="Xóa sản phẩm"
+        message="Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm này khỏi gian hàng không? Tất cả thông tin liên quan sẽ bị mất."
+        confirmText="Xóa vĩnh viễn"
+        type="danger"
+      />
+    </div>
+
   );
 };

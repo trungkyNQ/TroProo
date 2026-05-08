@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShoppingCart, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Check } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useToast } from '../../context/ToastContext';
+
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -45,6 +47,8 @@ export const CartDrawer = ({ isOpen, onClose, onNavigate, user }: CartDrawerProp
   const selectedTotal = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const selectedCount = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  const { showToast } = useToast();
+
   const handleCheckout = () => {
     if (selectedItems.length === 0) return;
     
@@ -52,7 +56,7 @@ export const CartDrawer = ({ isOpen, onClose, onNavigate, user }: CartDrawerProp
     if (user) {
       const selfOwnedItem = selectedItems.find(item => item.owner_id === user.id);
       if (selfOwnedItem) {
-        alert(`Bạn không thể mua sản phẩm "${selfOwnedItem.title}" vì bạn là người đăng tin này!`);
+        showToast(`Bạn không thể mua sản phẩm "${selfOwnedItem.title}" vì bạn là người đăng tin này!`, 'warning');
         return;
       }
     }

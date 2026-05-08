@@ -17,7 +17,8 @@ interface ListingsTabProps {
   listingsData: any[];
   setShowAddListingModal: (v: boolean) => void;
   onEditListing: (listing: any) => void;
-  onDeleteListing: (id: string) => void;
+  onDeleteListing: (listing: any) => void;
+
 }
 
 export const ListingsTab = ({ listingsData, setShowAddListingModal, onEditListing, onDeleteListing }: ListingsTabProps) => {
@@ -77,9 +78,10 @@ export const ListingsTab = ({ listingsData, setShowAddListingModal, onEditListin
                               <Edit3 className="w-5 h-5" />
                             </button>
                             <button 
-                              onClick={() => onDeleteListing(listing.id)}
+                              onClick={() => onDeleteListing(listing)}
                               className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 transition-all"
                             >
+
                               <Trash2 className="w-5 h-5" />
                             </button>
                           </div>

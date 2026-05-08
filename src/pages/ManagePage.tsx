@@ -14,6 +14,9 @@ import { RoomDetailModal } from '../components/manage/modals/RoomDetailModal';
 import { DeleteConfirmModal } from '../components/manage/modals/DeleteConfirmModal';
 import { CreateInvoiceModal } from '../components/manage/modals/CreateInvoiceModal';
 import { RiskAlerts } from '../components/RiskAnalysis/RiskAlerts';
+import { ConfirmModal } from '../components/shared/ConfirmModal';
+import { useToast } from '../context/ToastContext';
+
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -93,6 +96,8 @@ interface ManagePageProps {
 
 
 export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: ManagePageProps) => {
+  const { showToast } = useToast();
+
   // Get tab from URL or LocalStorage or fallback to initialParams or 'overview'
   const getInitialTab = () => {
     const params = new URLSearchParams(window.location.search);
@@ -185,6 +190,8 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
   const [roomToDelete, setRoomToDelete] = useState<{id: string, title: string} | null>(null);
   const [isDeletingRoom, setIsDeletingRoom] = useState(false);
   const [deleteSuccessMessage, setDeleteSuccessMessage] = useState('');
+  const [listingToDelete, setListingToDelete] = useState<any | null>(null);
+
 
   // Room Detail Modal states
   const [showRoomDetailModal, setShowRoomDetailModal] = useState(false);
@@ -374,7 +381,9 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       }
     } catch (err) {
       console.error('Error creating invoice:', err);
-      alert('Không thể tạo hóa đơn');
+      // alert('Không thể tạo hóa đơn');
+      showToast('Không thể tạo hóa đơn. Vui lòng kiểm tra lại dữ liệu.', 'error');
+
     } finally {
       setAddingInvoice(false);
     }
@@ -387,7 +396,9 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       await fetchInvoices(); // Only need to refresh invoices
     } catch (err) {
       console.error('Error updating invoice:', err);
-      alert('Không thể cập nhật hóa đơn');
+      // alert('Không thể cập nhật hóa đơn');
+      showToast('Không thể cập nhật trạng thái hóa đơn.', 'error');
+
     }
   };
 
@@ -486,7 +497,9 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       await fetchDashboardData();
     } catch (err) {
       console.error('Error adding room:', err);
-      alert('Đã có lỗi xảy ra. Kiểm tra console hoặc quyền (RLS) của database.');
+      // alert('Đã có lỗi xảy ra. Kiểm tra console hoặc quyền (RLS) của database.');
+      showToast('Lỗi khi thêm phòng. Vui lòng kiểm tra lại kết nối hoặc quyền truy cập.', 'error');
+
     } finally {
       setAddingRoom(false);
     }
@@ -530,23 +543,33 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       await fetchDashboardData();
     } catch (err) {
       console.error('Error adding/updating listing:', err);
-      alert('Đã có lỗi khi lưu bài đăng.');
+      // alert('Đã có lỗi khi lưu bài đăng.');
+      showToast('Không thể lưu bài đăng. Vui lòng thử lại.', 'error');
+
     } finally {
       setAddingListing(false);
     }
   };
 
-  const handleDeleteListing = async (id: string) => {
-    if (!window.confirm('Bạn có chắc muốn xóa bài đăng này? Các phòng đang liên kết sẽ bị đặt thành trống cục bộ nhưng không bị xóa.')) return;
+  const handleDeleteListing = (listing: any) => {
+    setListingToDelete(listing);
+  };
+
+  const executeDeleteListing = async () => {
+    if (!listingToDelete) return;
+    const id = listingToDelete.id;
+    setListingToDelete(null);
     try {
       const { error } = await supabase.from('listings').delete().eq('id', id);
       if (error) throw error;
+      showToast('Đã xóa bài đăng thành công', 'success');
       await fetchDashboardData();
     } catch (err) {
       console.error('Error deleting listing:', err);
-      alert('Đã có lỗi khi xóa bài đăng.');
+      showToast('Lỗi khi xóa bài đăng.', 'error');
     }
   };
+
 
   const openEditListingModal = (listing: any) => {
     setEditingListingId(listing.id);
@@ -574,7 +597,9 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       setSupportRequestsData(prev => prev.map(req => req.id === id ? { ...req, status: newStatus } : req));
     } catch (err) {
       console.error('Error updating support request:', err);
-      alert('Không thể cập nhật yêu cầu. Vui lòng thử lại.');
+      // alert('Không thể cập nhật yêu cầu. Vui lòng thử lại.');
+      showToast('Lỗi cập nhật yêu cầu hỗ trợ.', 'error');
+
     }
   };
 
@@ -624,7 +649,9 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       await fetchDashboardData();
     } catch (err) {
       console.error('Error updating room:', err);
-      alert('Đã có lỗi khi cập nhật phòng.');
+      // alert('Đã có lỗi khi cập nhật phòng.');
+      showToast('Không thể cập nhật thông tin phòng.', 'error');
+
     } finally {
       setSavingRoomEdit(false);
     }
@@ -719,7 +746,9 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
     } catch (err) {
       console.error('Error deleting room:', err);
       // Nếu vẫn lỗi, khả năng cao là do chính sách RLS hoặc dữ liệu đặc biệt chưa được dọn dẹp hết
-      alert('Không thể xóa phòng. Phòng có thể đang gắn với dữ liệu không thể dọn dẹp tự động. Vui lòng liên hệ hỗ trợ hoặc kiểm tra lại các hợp đồng đang hoạt động.');
+      // alert('Không thể xóa phòng. Phòng có thể đang gắn với dữ liệu không thể dọn dẹp tự động. Vui lòng liên hệ hỗ trợ hoặc kiểm tra lại các hợp đồng đang hoạt động.');
+      showToast('Lỗi dọn dẹp dữ liệu. Phòng này có thể đang có hợp đồng hoặc hóa đơn chưa được xử lý.', 'error');
+
     } finally {
       setIsDeletingRoom(false);
       setRoomToDelete(null);
@@ -950,7 +979,11 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
           )}
 
           {activeTab === 'contracts' && (
-            <ContractsTab contractsData={contractsData} roomsData={roomsData} />
+            <ContractsTab 
+              contractsData={contractsData} 
+              roomsData={roomsData} 
+              onRefresh={fetchContracts} 
+            />
           )}
 
           {activeTab === 'support' && (
@@ -1068,6 +1101,17 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
           setShowAddListingModal(true);
         }}
       />
+
+      <ConfirmModal
+        show={!!listingToDelete}
+        onClose={() => setListingToDelete(null)}
+        onConfirm={executeDeleteListing}
+        title="Xóa bài đăng"
+        message={`Bạn có chắc muốn xóa bài đăng "${listingToDelete?.title}"? \n\nCác phòng đang liên kết sẽ bị đặt thành trống cục bộ nhưng dữ liệu phòng sẽ không bị xóa vĩnh viễn.`}
+        confirmText="Xác nhận xóa"
+        type="danger"
+      />
     </div>
+
   );
 };

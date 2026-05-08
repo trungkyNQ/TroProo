@@ -70,11 +70,62 @@ export const ContractsTab = ({ contractsData, roomsData, onRefresh }: ContractsT
   };
 
   const handleDownloadContract = (contract: any) => {
-    showToast('Đang tạo bản PDF hợp đồng...', 'info');
+    setViewingContract(contract);
+    // Wait for modal to render then print
     setTimeout(() => {
-      showToast('Đã tải xuống hợp đồng thành công!', 'success');
-    }, 1500);
+      const printContents = document.getElementById('contract-printable')?.innerHTML;
+      if (!printContents) return;
+      
+      const originalContents = document.body.innerHTML;
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Hop_Dong_Thue_Phong_${contract.room.replace(/\s+/g, '_')}</title>
+            <style>
+              body { font-family: "Times New Roman", Times, serif; line-height: 1.6; color: #000; padding: 40px; }
+              .text-center { text-center: center; text-align: center; }
+              .font-bold { font-weight: bold; }
+              .font-black { font-weight: 900; }
+              .text-3xl { font-size: 24pt; }
+              .text-xl { font-size: 18pt; }
+              .text-lg { font-size: 14pt; }
+              .mb-10 { margin-bottom: 30pt; }
+              .mb-8 { margin-bottom: 20pt; }
+              .mb-4 { margin-bottom: 12pt; }
+              .space-y-8 > * + * { margin-top: 24pt; }
+              .space-y-4 > * + * { margin-top: 12pt; }
+              .grid { display: flex; justify-content: space-between; }
+              .grid-cols-2 > div { width: 45%; }
+              .bg-slate-50\\/50 { background: #f8fafc; padding: 15pt; border-radius: 8pt; border: 1pt solid #e2e8f0; margin-bottom: 15pt; }
+              .border-b { border-bottom: 1pt solid #e2e8f0; }
+              .pb-2 { padding-bottom: 6pt; }
+              .mt-12 { margin-top: 40pt; }
+              .pt-8 { padding-top: 20pt; }
+              .mb-24 { margin-bottom: 80pt; }
+              .underline { text-decoration: underline; }
+              @media print {
+                body { padding: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContents}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }, 100);
   };
+
 
   const formatPhone = (phone?: string) => {
     if (!phone) return '...........................................';
@@ -423,7 +474,8 @@ export const ContractsTab = ({ contractsData, roomsData, onRefresh }: ContractsT
                   </div>
                   
                   <div className="p-8 overflow-y-auto bg-slate-50">
-                    <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-200 mx-auto max-w-3xl">
+                    <div id="contract-printable" className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-200 mx-auto max-w-3xl">
+
                       <div className="text-center mb-10">
                         <h4 className="font-bold text-lg">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h4>
                         <p className="font-bold text-sm underline decoration-slate-400 underline-offset-4 mb-8">Độc lập - Tự do - Hạnh phúc</p>

@@ -14,6 +14,8 @@ import { TenantSupportModal } from '../components/tenant/modals/TenantSupportMod
 import { TenantInvoicesTab } from '../components/tenant/TenantInvoicesTab';
 import { InvoiceDetailModal } from '../components/tenant/modals/InvoiceDetailModal';
 import { TenantSupportTab } from '../components/tenant/TenantSupportTab';
+import { ConfirmModal } from '../components/shared/ConfirmModal';
+
 
 import { 
   Building,
@@ -93,6 +95,8 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
   const [showInvoiceDetailModal, setShowInvoiceDetailModal] = useState(false);
   const [updatingInvoice, setUpdatingInvoice] = useState(false);
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
+  const [rejectingContract, setRejectingContract] = useState<any | null>(null);
+
 
   // Support Requests states
   const [supportRequestsData, setSupportRequestsData] = useState<any[]>([]);
@@ -334,13 +338,18 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     }
   };
 
-  const handleRejectContract = async (contract: any) => {
-    if (!window.confirm(`Bạn có chắc muốn TỪ CHỐI hợp đồng phòng ${contract.rooms?.title}?`)) return;
-    
-    setSigningContract(contract.id);
+  const handleRejectContract = (contract: any) => {
+    setRejectingContract(contract);
+  };
+
+  const executeRejectContract = async () => {
+    if (!rejectingContract) return;
+    const contractId = rejectingContract.id;
+    setSigningContract(contractId);
+    setRejectingContract(null);
     try {
       const { error: rpcError } = await supabase.rpc('reject_contract', { 
-        p_contract_id: contract.id 
+        p_contract_id: contractId 
       });
       if (rpcError) throw rpcError;
       await fetchPendingContracts();
@@ -352,6 +361,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
       setSigningContract(null);
     }
   };
+
 
   const fetchSupportRequests = async () => {
     if (!user) return;
@@ -662,50 +672,30 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
         handleSubmitRequest={handleSubmitRequest} 
       />
 
-      {/* Pay Confirmation Modal */}
-      <AnimatePresence>
-        {payingInvoiceId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
-            >
-              <div className="p-6 md:p-8 text-center">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Wallet className="w-10 h-10 text-primary" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-2 font-display">Xác nhận đã chuyển khoản</h3>
-                <p className="text-slate-500 font-medium">
-                  Bạn có chắc chắn đã thanh toán số tiền này cho Chủ trọ không? Hành động này sẽ thông báo cho chủ trọ kiểm tra.
-                </p>
-              </div>
-              
-              <div className="p-6 bg-slate-50 flex gap-3">
-                <button 
-                  onClick={() => setPayingInvoiceId(null)}
-                  className="flex-1 py-3.5 font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition-colors"
-                >
-                  Hủy bỏ
-                </button>
-                <button 
-                  onClick={executePayInvoice}
-                  disabled={updatingInvoice}
-                  className="flex-1 py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-primary-hover transition-all disabled:opacity-50"
-                >
-                  {updatingInvoice ? 'Đang gửi...' : 'Đã chuyển khoản'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Rejection Confirmation */}
+      <ConfirmModal
+        show={!!rejectingContract}
+        onClose={() => setRejectingContract(null)}
+        onConfirm={executeRejectContract}
+        title="Từ chối hợp đồng"
+        message={`Bạn có chắc muốn TỪ CHỐI lời mời hợp đồng cho phòng ${rejectingContract?.rooms?.title}?`}
+        confirmText="Từ chối"
+        type="danger"
+        loading={signingContract === rejectingContract?.id}
+      />
+
+      {/* Pay Confirmation */}
+      <ConfirmModal
+        show={!!payingInvoiceId}
+        onClose={() => setPayingInvoiceId(null)}
+        onConfirm={executePayInvoice}
+        title="Xác nhận thanh toán"
+        message="Bạn có chắc chắn đã thanh toán số tiền này cho Chủ trọ không? Hành động này sẽ gửi thông báo để chủ trọ kiểm tra và duyệt hóa đơn cho bạn."
+        confirmText="Đã chuyển khoản"
+        type="info"
+        loading={updatingInvoice}
+      />
+
     </div>
   );
 };

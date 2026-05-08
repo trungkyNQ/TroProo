@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  FileText, Clock, Building, Calendar, ShieldCheck, Eye, X, Loader2
+  FileText, Clock, Building, Calendar, ShieldCheck, Eye, X, Loader2, Download
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -63,6 +63,69 @@ export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContract
       setViewingContract(null);
     }
   };
+
+  const handleDownloadContract = (room: any) => {
+    handleViewContract(room);
+    // Wait for data to fetch and modal to render
+    const checkAndPrint = () => {
+      const printContents = document.getElementById('tenant-contract-printable')?.innerHTML;
+      const isLoading = document.querySelector('.animate-spin'); // Check if loader is present
+      
+      if (!printContents || isLoading) {
+        setTimeout(checkAndPrint, 100);
+        return;
+      }
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Hop_Dong_Thue_Phong_${room.title.replace(/\s+/g, '_')}</title>
+            <style>
+              body { font-family: "Times New Roman", Times, serif; line-height: 1.6; color: #000; padding: 40px; }
+              .text-center { text-center: center; text-align: center; }
+              .font-bold { font-weight: bold; }
+              .font-black { font-weight: 900; }
+              .text-3xl { font-size: 24pt; }
+              .text-xl { font-size: 18pt; }
+              .text-lg { font-size: 14pt; }
+              .mb-10 { margin-bottom: 30pt; }
+              .mb-8 { margin-bottom: 20pt; }
+              .mb-4 { margin-bottom: 12pt; }
+              .space-y-8 > * + * { margin-top: 24pt; }
+              .space-y-4 > * + * { margin-top: 12pt; }
+              .grid { display: flex; justify-content: space-between; }
+              .grid-cols-2 > div { width: 45%; }
+              .bg-slate-50\\/50 { background: #f8fafc; padding: 15pt; border-radius: 8pt; border: 1pt solid #e2e8f0; margin-bottom: 15pt; }
+              .border-b { border-bottom: 1pt solid #e2e8f0; }
+              .pb-2 { padding-bottom: 6pt; }
+              .mt-12 { margin-top: 40pt; }
+              .pt-8 { padding-top: 20pt; }
+              .mb-24 { margin-bottom: 80pt; }
+              .underline { text-decoration: underline; }
+              @media print {
+                body { padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContents}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    };
+    
+    checkAndPrint();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -114,6 +177,12 @@ export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContract
                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-md shadow-orange-200 hover:bg-orange-600 transition-all w-full"
                   >
                     <Eye className="w-4 h-4 shrink-0" /> Xem hợp đồng
+                  </button>
+                  <button 
+                    onClick={() => handleDownloadContract(room)}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-md shadow-slate-200 hover:bg-slate-900 transition-all w-full"
+                  >
+                    <Download className="w-4 h-4 shrink-0" /> Tải xuống
                   </button>
                 </div>
               </div>
@@ -176,7 +245,8 @@ export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContract
                   </div>
                 ) : null}
 
-                <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-200 mx-auto max-w-3xl">
+                <div id="tenant-contract-printable" className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-200 mx-auto max-w-3xl">
+
                   <div className="text-center mb-10">
                     <h4 className="font-bold text-lg">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h4>
                     <p className="font-bold text-sm underline decoration-slate-400 underline-offset-4 mb-8">Độc lập - Tự do - Hạnh phúc</p>
