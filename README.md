@@ -9,11 +9,39 @@
 
 ## 📸 Giao diện ứng dụng
 
-| Trang chủ & Tìm kiếm | Chợ đồ cũ Sinh viên | Liên hệ & Bản đồ |
-| :---: | :---: | :---: |
-| ![Trang chủ](screenshots/home.png) | ![Chợ đồ cũ](screenshots/marketplace.png) | ![Liên hệ](screenshots/contact.png) |
-| **Dashboard Chủ trọ** | **Dashboard Người thuê** | **Quản trị hệ thống** |
-| ![Chủ trọ](screenshots/landlord_dashboard.png) | ![Người thuê](screenshots/tenant_dashboard.png) | ![Admin](screenshots/admin_dashboard.png) |
+### 1. Trang chủ & Hệ thống tìm kiếm
+Hệ thống cho phép người dùng tìm kiếm phòng trọ trực quan trên nền tảng Google Maps.
+![Trang chủ](images/home.png)
+
+---
+
+### 2. Chợ đồ cũ dành cho Sinh viên
+Sàn giao dịch nội bộ giúp người thuê mua bán các vật dụng gia dụng đã qua sử dụng.
+![Chợ đồ cũ](images/marketplace.png)
+
+---
+
+### 3. Liên hệ & Bản đồ tương tác
+Vị trí chính xác các cơ sở và thông tin liên hệ trực tiếp.
+![Liên hệ](images/contact.png)
+
+---
+
+### 4. Dashboard dành cho Chủ trọ
+Quản lý toàn bộ danh sách phòng, hợp đồng và hóa đơn hàng tháng.
+![Chủ trọ](images/landlord_dashboard.png)
+
+---
+
+### 5. Dashboard dành cho Người thuê
+Theo dõi chỉ số điện nước hàng tháng và thanh toán hóa đơn trực tuyến.
+![Người thuê](images/tenant_dashboard.png)
+
+---
+
+### 6. Giao diện Quản trị viên (Admin)
+Hệ thống kiểm duyệt tin đăng và sản phẩm trên toàn sàn.
+![Admin](images/admin_dashboard.png)
 
 ---
 
@@ -94,5 +122,4 @@ Dự án được phát triển trong khuôn khổ: **Đồ án Tốt nghiệp /
 | **Lê Xuân Nhật** | Xuannhat4412@gmail.com |
 | **Lê Quang Khánh** | Quangkhanh18@gmail.com |
 
-**Giáo viên hướng dẫn:** [Tên giáo viên]
 **Trường:** Trường Đại học Sư phạm - Đại học Đà Nẵng
