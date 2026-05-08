@@ -1,31 +1,49 @@
-# 🏠 Trọ Pro (TroPro) - Nền tảng Quản lý và Cho thuê Phòng trọ tích hợp AI
+# 🏠 Trọ Pro (TroPro) - Nền tảng Quản lý và Cho thuê Phòng trọ thông minh tích hợp AI
 
-![TroPro Banner](https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80)
+![TroPro Banner](https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80)
 
 ## 📋 Giới thiệu dự án
-**Trọ Pro** là một giải pháp chuyển đổi số toàn diện cho thị trường cho thuê phòng trọ. Ứng dụng không chỉ kết nối giữa **Chủ trọ** và **Người thuê** mà còn tích hợp các công nghệ hiện đại như **AI (Artificial Intelligence)** để phân tích rủi ro năng lượng (điện, nước), giúp tối ưu hóa chi phí và quản lý hiệu quả.
+**Trọ Pro** là một hệ sinh thái chuyển đổi số hiện đại dành cho thị trường bất động sản cho thuê (phòng trọ, căn hộ). Dự án không chỉ dừng lại ở việc kết nối giữa **Chủ trọ** và **Người thuê**, mà còn tiên phong ứng dụng công nghệ **AI (Artificial Intelligence)** để phân tích rủi ro sử dụng điện nước, tự động hóa quy trình thanh toán và nâng cao trải nghiệm sống của người dùng.
+
+---
+
+## 📸 Giao diện ứng dụng
+
+````carousel
+![Trang chủ - Tìm kiếm phòng trọ](input_file_0.png)
+<!-- slide -->
+![Chợ đồ cũ sinh viên](input_file_1.png)
+<!-- slide -->
+![Bản đồ tương tác & Liên hệ](input_file_2.png)
+<!-- slide -->
+![Dashboard Chủ trọ - Quản lý tổng quan](input_file_3.png)
+<!-- slide -->
+![Dashboard Người thuê - Theo dõi điện nước](input_file_4.png)
+````
 
 ---
 
 ## ✨ Các tính năng nổi bật
 
-### 👤 Xác thực & Vai trò
-- Đăng ký/Đăng nhập (Email, Mật khẩu) với **Supabase Auth**.
-- Phân quyền người dùng: **Chủ trọ (Landlord)** và **Người thuê (Tenant)**.
+### 🚀 Hệ thống Thuê phòng (Rental Marketplace)
+- **Bản đồ tương tác (Google Maps API):** Tìm kiếm và xem vị trí phòng trọ trực quan trên nền tảng bản đồ Google Maps hiện đại.
+- **Bộ lọc thông minh:** Lọc phòng theo giá, diện tích, tiện nghi và khu vực.
+- **Quản lý Hợp đồng:** Lưu trữ và quản lý trạng thái hợp đồng thuê phòng minh bạch.
 
-### 🔍 Tìm kiếm & Khám phá
-- Tìm kiếm phòng trọ theo giá, diện tích và tiện ích.
-- **Bản đồ tương tác (Leaflet Maps)** hiển thị vị trí chính xác các phòng trọ.
-- Xem chi tiết phòng trọ với hình ảnh và thông tin tiện nghi đầy đủ.
+### 🛒 Chợ đồ cũ Sinh viên (Second-hand Marketplace)
+- **Sàn giao dịch nội bộ:** Nơi người thuê có thể đăng bán các vật dụng gia dụng, nội thất đã qua sử dụng.
+- **Quản lý Sản phẩm:** Hỗ trợ đăng tin với hình ảnh, mô tả tình trạng (Mới, Like New, Cũ) và phân loại danh mục.
+- **Quy trình Đặt hàng:** Tích hợp giỏ hàng, quản lý đơn hàng và theo dõi trạng thái vận chuyển.
+- **Thanh toán linh hoạt:** Hỗ trợ cả thanh toán trực tuyến qua VNPay và COD.
 
 ### 🤖 Công nghệ AI Đột phá
-- **Phân tích rủi ro điện nước**: Tích hợp **Google Gemini AI** để dự báo và phát hiện bất thường trong việc sử dụng năng lượng.
-- **ProBot Chat**: Trợ lý ảo hỗ trợ người dùng 24/7.
+- **Phân tích Rủi ro Năng lượng:** Sử dụng **Google Gemini AI** để phân tích dữ liệu điện, nước, phát hiện các bất thường hoặc lãng phí.
+- **ProBot Chat:** Trợ lý ảo AI hỗ trợ giải đáp thắc mắc và hướng dẫn sử dụng 24/7.
 
-### 💰 Thanh toán & Quản lý
-- Tích hợp cổng thanh toán trực tuyến (Thử nghiệm với **VNPay**).
-- Dashboard quản lý tin đăng cho chủ trọ.
-- Trang hỗ trợ và yêu cầu sửa chữa cho người thuê.
+### 💼 Quản lý Chuyên nghiệp (Dashboards)
+- **Chủ trọ (Landlord):** Quản lý danh sách phòng, tin đăng, hóa đơn và yêu cầu hỗ trợ.
+- **Người thuê (Tenant):** Theo dõi chỉ số điện nước, thanh toán hóa đơn trực tuyến.
+- **Quản trị viên (Admin):** Kiểm duyệt tin đăng phòng và sản phẩm chợ đồ cũ trên toàn hệ thống.
 
 ---
 
@@ -34,50 +52,51 @@
 | Lớp | Công nghệ |
 | :--- | :--- |
 | **Frontend** | React 19, TypeScript, Tailwind CSS 4, Motion (Animations) |
-| **Backend** | Supabase (BaaS), Express (Payment Service) |
-| **Database** | PostgreSQL (Supabase) |
-| **AI Engine** | Google Gemini API |
-| **Bản đồ** | Leaflet / React Leaflet |
+| **Backend & Auth** | Supabase (PostgreSQL, Auth, Storage) |
+| **Payment Server** | Express.js, Node.js, TSX |
+| **AI Engine** | Google Gemini Generative AI |
+| **Bản đồ** | Google Maps Embed API |
+| **Kiểm thử** | Playwright (E2E Testing) |
 
 ---
 
 ## 🚀 Hướng dẫn cài đặt & Chạy ứng dụng
 
-### 1. Yêu cầu hệ thống
-- **Node.js**: Phiên bản 18.x trở lên.
-- **NPM** hoặc **Yarn**.
-
-### 2. Cấu hình biến môi trường
-Tạo tệp `.env` trong thư mục gốc và cung cấp các thông tin sau (Tham khảo tệp `.env.example` nếu có):
+### 1. Cấu hình biến môi trường
+Tạo tệp `.env` tại thư mục gốc:
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### 3. Cài đặt thư viện
+### 2. Cài đặt và Chạy
 ```bash
 npm install
-```
-
-### 4. Khởi chạy ứng dụng
-Chạy môi trường phát triển (Development):
-```bash
 npm run dev
+npm run server
 ```
-Ứng dụng sẽ chạy tại địa chỉ: `http://localhost:3000`
 
 ---
 
-## 📅 Lộ trình phát triển (Roadmap)
-- [x] Tuần 1: Thiết lập nền tảng & Xác thực người dùng.
-- [x] Tuần 2: Hệ thống tìm kiếm (Marketplace) & Bản đồ.
-- [ ] Tuần 3: Quản lý Chủ trọ & Bảng điều khiển người dùng.
-- [ ] Tuần 4: AI Phân tích rủi ro & Hoàn thiện hệ thống.
+## 📂 Cấu trúc dữ liệu chính (Supabase)
+- `profiles`: Thông tin định danh & Vai trò người dùng.
+- `listings` & `rooms`: Quản lý tin đăng phòng.
+- `products` & `orders`: Hệ thống Marketplace đồ cũ dành cho sinh viên.
+- `invoices`: Tự động hóa hóa đơn hàng tháng tích hợp chỉ số điện nước.
+- `risk_alerts`: Cảnh báo rủi ro từ AI.
 
 ---
 
 ## 📄 Bản quyền & Liên hệ
-Dự án được phát triển bởi: **[Tên của bạn]** 
-Cố vấn/Giảng viên: **[Tên giáo viên]**
-Học viện/Trường: **[Tên trường của bạn]**
+Dự án được phát triển trong khuôn khổ: **Đồ án Tốt nghiệp / Khóa luận** 
+
+### 👥 Đội ngũ thực hiện
+| Họ và Tên | Email |
+| :--- | :--- |
+| **Nguyễn Trung Kỳ** | Kyn46686@gmail.com |
+| **Nguyễn Đình Dũng** | Dung0602@gmail.com |
+| **Lê Hữu Cầu** | Caujr20704@gmail.com |
+| **Lê Xuân Nhật** | Xuannhat4412@gmail.com |
+| **Lê Quang Khánh** | Quangkhanh18@gmail.com |
+
