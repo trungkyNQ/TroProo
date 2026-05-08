@@ -9,17 +9,14 @@
 
 ## 📸 Giao diện ứng dụng
 
-````carousel
-![Trang chủ - Tìm kiếm phòng trọ](input_file_0.png)
-<!-- slide -->
-![Chợ đồ cũ sinh viên](input_file_1.png)
-<!-- slide -->
-![Bản đồ tương tác & Liên hệ](input_file_2.png)
-<!-- slide -->
-![Dashboard Chủ trọ - Quản lý tổng quan](input_file_3.png)
-<!-- slide -->
-![Dashboard Người thuê - Theo dõi điện nước](input_file_4.png)
-````
+> [!TIP]
+> Để hiển thị hình ảnh thực tế, bạn hãy chụp ảnh màn hình dự án và lưu vào thư mục `screenshots/` trong máy, sau đó cập nhật đường dẫn tương ứng bên dưới.
+
+| Trang chủ & Tìm kiếm | Chợ đồ cũ Sinh viên |
+| :---: | :---: |
+| ![Trang chủ](https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80) | ![Chợ đồ cũ](https://images.unsplash.com/photo-1558444458-5cd455830d60?auto=format&fit=crop&w=600&q=80) |
+| **Bản đồ & Liên hệ** | **Dashboard Quản lý** |
+| ![Bản đồ](https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=600&q=80) | ![Dashboard](https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80) |
 
 ---
 
@@ -100,3 +97,5 @@ Dự án được phát triển trong khuôn khổ: **Đồ án Tốt nghiệp /
 | **Lê Xuân Nhật** | Xuannhat4412@gmail.com |
 | **Lê Quang Khánh** | Quangkhanh18@gmail.com |
 
+**Giáo viên hướng dẫn:** [Tên giáo viên]
+**Trường:** Trường Đại học Sư phạm - Đại học Đà Nẵng
