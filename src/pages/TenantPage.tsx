@@ -592,6 +592,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
               handleStartChat={handleStartChat}
               isStartingChat={isStartingChat}
               user={user}
+              onRefreshRooms={fetchTenantRooms}
             />
           )}
 

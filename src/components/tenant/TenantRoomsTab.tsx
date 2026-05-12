@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
-  Building, Home, MapPin, User, Wallet, Calendar, Zap, Droplets, Wind, PlusCircle, Maximize2, MoreVertical, MessageSquare, Phone, Layers, ShieldCheck
+  Building, Home, MapPin, User, Wallet, Calendar, Zap, Droplets, Wind, PlusCircle, Maximize2, MoreVertical, MessageSquare, Phone, Layers, ShieldCheck, UserPlus
 } from 'lucide-react';
+import { AddRoommateModal } from './modals/AddRoommateModal';
 
 interface TenantRoomsTabProps {
   tenantRooms: any[];
@@ -11,9 +12,11 @@ interface TenantRoomsTabProps {
   handleStartChat: (ownerId: string) => void;
   isStartingChat: boolean;
   user: any;
+  onRefreshRooms?: () => void;
 }
 
-export const TenantRoomsTab = ({ tenantRooms, loadingRooms, onNavigate, handleStartChat, isStartingChat, user }: TenantRoomsTabProps) => {
+export const TenantRoomsTab = ({ tenantRooms, loadingRooms, onNavigate, handleStartChat, isStartingChat, user, onRefreshRooms }: TenantRoomsTabProps) => {
+  const [roommateRoom, setRoommateRoom] = useState<any>(null);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -96,6 +99,15 @@ export const TenantRoomsTab = ({ tenantRooms, loadingRooms, onNavigate, handleSt
                       >
                         <MessageSquare className="w-4 h-4" /> Message
                       </button>
+                      {!isExpired && (
+                        <button
+                          onClick={() => setRoommateRoom(room)}
+                          className="w-10 flex items-center justify-center rounded-xl bg-green-500/80 hover:bg-green-500 backdrop-blur-md text-white transition-all"
+                          title="Thêm bạn cùng phòng"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                        </button>
+                      )}
                       {room.landlord_phone && (
                         <a href={`tel:${room.landlord_phone}`} className="w-10 flex items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-all">
                           <Phone className="w-4 h-4" />
@@ -195,6 +207,18 @@ export const TenantRoomsTab = ({ tenantRooms, loadingRooms, onNavigate, handleSt
           })}
         </div>
       )}
+
+      {/* Add Roommate Modal */}
+      <AddRoommateModal
+        show={!!roommateRoom}
+        onClose={() => setRoommateRoom(null)}
+        room={roommateRoom || { id: '', title: '', owner_id: '', contract_end: '', contract_start: '' }}
+        user={user}
+        onSuccess={() => {
+          setRoommateRoom(null);
+          if (onRefreshRooms) onRefreshRooms();
+        }}
+      />
     </motion.div>
   );
 };
