@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import {
   Tag, Box, MapPin, ShieldCheck, Star, ArrowRight, ShoppingCart, MessageSquare, AlertCircle, Loader2, Heart
 } from 'lucide-react';
+import { StoreDetailSkeleton } from '../components/shared/SharedSkeletons';
 
 interface StoreDetailPageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -187,9 +188,10 @@ export const StoreDetailPage = ({ onNavigate, user, onLogout, params }: StoreDet
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center flex-col gap-4">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="font-bold text-slate-500">Đang tải thông tin sản phẩm...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+          <StoreDetailSkeleton />
+        </main>
       </div>
     );
   }

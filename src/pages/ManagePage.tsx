@@ -966,7 +966,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
           )}
 
           {activeTab === 'risk_alerts' && (
-            <RiskAlerts onNavigate={onNavigate} hasRooms={roomsData.length > 0} role="landlord" />
+            <RiskAlerts onNavigate={onNavigate} hasRooms={roomsData.length > 0} role="landlord" invoicesData={invoicesData} />
           )}
 
           {activeTab === 'listings' && (

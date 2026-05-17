@@ -145,9 +145,27 @@ export const AdminRiskTab = ({ risks, loading, onNavigateToRoom }: AdminRiskTabP
         </div>
         <div className="overflow-auto flex-1">
           {loading ? (
-            <div className="p-20 flex flex-col items-center justify-center">
-              <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-              <p className="text-slate-500 font-black uppercase text-xs tracking-widest">Đang phân tích rủi ro...</p>
+            <div className="p-6 space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-6 py-4 border-b border-slate-100 dark:border-slate-800 animate-pulse">
+                  <div className="w-28 space-y-2 shrink-0">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3" />
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+                  </div>
+                  <div className="w-44 space-y-2 shrink-0">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4/5" />
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-2/3" />
+                  </div>
+                  <div className="w-28 shrink-0">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                  </div>
+                  <div className="w-12 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl ml-auto" />
+                </div>
+              ))}
             </div>
           ) : filteredRisks.length === 0 ? (
             <div className="p-20 text-center">

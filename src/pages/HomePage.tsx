@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { listings, areas } from '../constants';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { ListingCardSkeleton } from '../components/shared/SharedSkeletons';
 
 export const HomePage = ({ 
   onNavigate, 
@@ -25,7 +26,6 @@ export const HomePage = ({
 }) => {
   const [realListings, setRealListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [thongKeKhuVuc, setThongKeKhuVuc] = useState<Record<string, number>>({});
 
   const [searchLocation, setSearchLocation] = useState('');
   const [priceRange, setPriceRange] = useState('all');
@@ -38,42 +38,7 @@ export const HomePage = ({
 
   useEffect(() => {
     fetchListings();
-    layThongKeKhuVuc();
   }, []);
-
-  const layThongKeKhuVuc = async () => {
-    try {
-      // Tối ưu: Lấy tất cả location của bài đăng hợp lệ trong 1 request duy nhất
-      const { data: locations, error } = await supabase
-        .from('listings')
-        .select('location')
-        .eq('is_active', true)
-        .eq('approval_status', 'approved');
-
-      if (error) throw error;
-
-      const stats: Record<string, number> = {};
-      
-      // Khởi tạo các quận với giá trị 0
-      areas.forEach(a => stats[a.name] = 0);
-
-      // Đếm tại client
-      if (locations) {
-        locations.forEach(row => {
-          const loc = row.location?.toLowerCase() || '';
-          areas.forEach(area => {
-            if (loc.includes(area.name.toLowerCase())) {
-              stats[area.name]++;
-            }
-          });
-        });
-      }
-      
-      setThongKeKhuVuc(stats);
-    } catch (error) {
-      console.error('Error fetching area stats:', error);
-    }
-  };
 
   const fetchListings = async () => {
     setLoading(true);
@@ -331,7 +296,7 @@ export const HomePage = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {loading ? (
               [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="bg-slate-50 rounded-xl aspect-[4/3] animate-pulse"></div>
+                <ListingCardSkeleton key={i} />
               ))
             ) : realListings.length > 0 ? (
               realListings.map((item) => (
@@ -406,7 +371,6 @@ export const HomePage = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div className="absolute bottom-4 left-4 text-white">
                     <p className="text-lg font-bold font-display">{area.name}</p>
-                    <p className="text-xs opacity-80">{thongKeKhuVuc[area.name] || 0} tin đăng</p>
                   </div>
                 </a>
               ))}

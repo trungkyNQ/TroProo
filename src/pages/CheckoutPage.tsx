@@ -164,9 +164,93 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center flex-col gap-4">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="font-bold text-slate-500">Đang khởi tạo thanh toán...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col animate-pulse">
+        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+          <div className="mb-6">
+            <div className="w-36 h-5 bg-slate-200 rounded-lg" />
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* LEFT COLUMN */}
+            <div className="w-full lg:w-[60%] space-y-8">
+              {/* Delivery Info Skeleton */}
+              <div className="bg-white p-6 sm:p-8 rounded-[30px] border border-slate-100 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100" />
+                  <div className="w-48 h-6 bg-slate-200 rounded-lg" />
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="w-32 h-4 bg-slate-200 rounded" />
+                    <div className="w-full h-12 bg-slate-100 rounded-2xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="w-24 h-4 bg-slate-200 rounded" />
+                    <div className="w-full h-12 bg-slate-100 rounded-2xl" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="w-36 h-4 bg-slate-200 rounded" />
+                      <div className="w-full h-12 bg-slate-100 rounded-2xl" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="w-36 h-4 bg-slate-200 rounded" />
+                      <div className="w-full h-12 bg-slate-100 rounded-2xl" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Skeleton */}
+              <div className="bg-white p-6 sm:p-8 rounded-[30px] border border-slate-100 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100" />
+                  <div className="w-48 h-6 bg-slate-200 rounded-lg" />
+                </div>
+                <div className="space-y-3">
+                  <div className="w-full h-20 bg-slate-100 rounded-2xl" />
+                  <div className="w-full h-20 bg-slate-100 rounded-2xl" />
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN */}
+            <div className="w-full lg:w-[40%]">
+              <div className="bg-white p-6 sm:p-8 rounded-[30px] border border-slate-100 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100" />
+                  <div className="w-48 h-6 bg-slate-200 rounded-lg" />
+                </div>
+                <div className="space-y-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="w-16 h-16 bg-slate-100 rounded-xl" />
+                      <div className="flex-1 space-y-2 py-1">
+                        <div className="h-4 bg-slate-200 rounded w-3/4" />
+                        <div className="h-3 bg-slate-200 rounded w-1/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-slate-100 pt-6 space-y-3">
+                  <div className="flex justify-between">
+                    <div className="w-24 h-4 bg-slate-200 rounded" />
+                    <div className="w-16 h-4 bg-slate-200 rounded" />
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="w-24 h-4 bg-slate-200 rounded" />
+                    <div className="w-16 h-4 bg-slate-200 rounded" />
+                  </div>
+                  <div className="flex justify-between items-end pt-4 border-t border-slate-100">
+                    <div className="w-32 h-6 bg-slate-200 rounded" />
+                    <div className="w-24 h-8 bg-slate-200 rounded-lg" />
+                  </div>
+                </div>
+                <div className="w-full h-12 bg-slate-200 rounded-2xl" />
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

@@ -22,11 +22,30 @@ export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading, hid
           .from('risk_alerts')
           .select('*')
           .eq('room_id', invoice.room_id)
-          .order('detected_at', { ascending: false })
-          .limit(2);
+          .order('detected_at', { ascending: false });
         
         if (data && data.length > 0) {
-          setAlerts(data);
+          // Parse target month/year from invoice.created_at or fallback to title
+          const invoiceDate = invoice.created_at ? new Date(invoice.created_at) : null;
+          let targetMonth = invoiceDate ? invoiceDate.getMonth() : -1;
+          let targetYear = invoiceDate ? invoiceDate.getFullYear() : -1;
+
+          if (invoice.title && (targetMonth === -1 || targetYear === -1)) {
+            const match = invoice.title.match(/Tháng\s+(\d+)\/(\d+)/i);
+            if (match) {
+              targetMonth = parseInt(match[1]) - 1;
+              targetYear = parseInt(match[2]);
+            }
+          }
+
+          // Filter alerts to match the invoice's month and year
+          const filtered = data.filter((alert: any) => {
+            if (!alert.detected_at) return false;
+            const alertDate = new Date(alert.detected_at);
+            return alertDate.getMonth() === targetMonth && alertDate.getFullYear() === targetYear;
+          });
+
+          setAlerts(filtered.slice(0, 2));
         } else {
           setAlerts([]);
         }

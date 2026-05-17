@@ -19,6 +19,7 @@ import {
   Heart
 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { SearchCardSkeleton } from '../components/shared/SharedSkeletons';
 
 const districts = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'];
 
@@ -245,14 +246,7 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
               
               {loading ? (
                 [1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-2xl h-48 animate-pulse border border-slate-100 flex p-2">
-                    <div className="w-64 h-full bg-slate-100 rounded-xl"></div>
-                    <div className="flex-1 p-4 space-y-4">
-                      <div className="h-6 bg-slate-100 rounded-md w-3/4"></div>
-                      <div className="h-4 bg-slate-100 rounded-md w-1/4"></div>
-                      <div className="h-10 bg-slate-100 rounded-md w-full"></div>
-                    </div>
-                  </div>
+                  <SearchCardSkeleton key={i} />
                 ))
               ) : realListings.length > 0 ? (
                 realListings.map((item) => (

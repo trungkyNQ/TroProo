@@ -10,7 +10,8 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { ProductModal } from '../components/store/ProductModal';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
-
+import { ProductSkeleton } from '../components/store/ProductSkeleton';
+import { OrderCardSkeleton } from '../components/shared/SharedSkeletons';
 
 interface MyStorePageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -579,9 +580,15 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
           {/* Content */}
           <div className="bg-white rounded-[32px] shadow-sm border border-slate-200 p-3 sm:p-6 min-h-[50vh]">
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="w-12 h-12 text-primary animate-spin" />
-              </div>
+              activeTab === 'store' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                  {[1, 2, 3, 4].map(i => <ProductSkeleton key={i} />)}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {[1, 2].map(i => <OrderCardSkeleton key={i} />)}
+                </div>
+              )
             ) : activeTab === 'store' ? (
               products.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-center">

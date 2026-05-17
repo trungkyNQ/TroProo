@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
+import { ListingDetailSkeleton } from '../components/shared/SharedSkeletons';
 
 interface ListingDetailPageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -339,8 +340,10 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+          <ListingDetailSkeleton />
+        </main>
       </div>
     );
   }
@@ -492,9 +495,22 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
                 Vị trí trên bản đồ
               </h3>
               {mapLoading ? (
-                <div className="flex items-center justify-center h-[350px] bg-gray-50 rounded-xl">
-                  <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                  <span className="ml-3 text-gray-500">Đang tải bản đồ...</span>
+                <div className="h-[350px] bg-slate-50 dark:bg-slate-900 rounded-xl relative overflow-hidden animate-pulse flex flex-col items-center justify-center border border-slate-100 dark:border-slate-800 shadow-inner">
+                  {/* Shimmering abstract grid map lines */}
+                  <div className="absolute inset-0 opacity-15 dark:opacity-5">
+                    <div className="absolute top-0 bottom-0 left-[20%] w-[1px] bg-slate-400" />
+                    <div className="absolute top-0 bottom-0 left-[40%] w-[1px] bg-slate-400" />
+                    <div className="absolute top-0 bottom-0 left-[60%] w-[1px] bg-slate-400" />
+                    <div className="absolute top-0 bottom-0 left-[80%] w-[1px] bg-slate-400" />
+                    <div className="absolute left-0 right-0 top-[25%] h-[1px] bg-slate-400" />
+                    <div className="absolute left-0 right-0 top-[50%] h-[1px] bg-slate-400" />
+                    <div className="absolute left-0 right-0 top-[75%] h-[1px] bg-slate-400" />
+                  </div>
+                  {/* Shimmering map pin shape */}
+                  <div className="relative w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/10 border border-indigo-200/50 dark:border-indigo-800">
+                    <div className="w-4 h-4 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+                  </div>
+                  <span className="mt-4 text-xs font-bold text-indigo-600/70 dark:text-indigo-400/70 tracking-wide uppercase">Đang thiết lập vị trí...</span>
                 </div>
               ) : mapCenter ? (
                 <div className="rounded-xl overflow-hidden h-[350px] border border-gray-100 shadow-inner relative group">

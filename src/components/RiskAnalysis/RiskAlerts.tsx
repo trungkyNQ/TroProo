@@ -27,12 +27,14 @@ interface Alert {
   rooms?: { title: string };
 }
 
-export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) => void; hasRooms?: boolean; role?: 'landlord' | 'tenant' }> = ({ onNavigate, hasRooms = true, role = 'landlord' }) => {
+export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) => void; hasRooms?: boolean; role?: 'landlord' | 'tenant'; invoicesData?: any[] }> = ({ onNavigate, hasRooms = true, role = 'landlord', invoicesData = [] }) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [activeRoomFilter, setActiveRoomFilter] = useState('all');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
 
   const taiDuLieuCanhBao = async () => {
     try {
@@ -65,9 +67,18 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
     }
   };
 
-  const filteredAlerts = activeFilter === 'all' 
-    ? alerts 
-    : alerts.filter(a => a.risk_level === activeFilter);
+  const uniqueRooms = Array.from(new Set(alerts.map(a => a.room_id))).map(id => {
+    return {
+      id,
+      title: alerts.find(a => a.room_id === id)?.rooms?.title || 'Phòng không rõ'
+    };
+  });
+
+  const filteredAlerts = alerts.filter(a => {
+    const matchLevel = activeFilter === 'all' || a.risk_level === activeFilter;
+    const matchRoom = activeRoomFilter === 'all' || a.room_id === activeRoomFilter;
+    return matchLevel && matchRoom;
+  });
 
   const stats = [
     { label: 'Tổng lượt quét AI', value: alerts.length, icon: ShieldAlert, color: 'text-primary', bg: 'bg-primary/10' },
@@ -75,6 +86,53 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
     { label: 'Trung Bình', value: alerts.filter(a => a.risk_level === 'trung_binh').length, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-100' },
     { label: 'An Toàn', value: alerts.filter(a => a.risk_level === 'thap').length, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-100' }
   ];
+
+  // --- CHART LOGIC ---
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
+  const usageChartDataRaw = Array.from({ length: 12 }, (_, i) => {
+    const month = i + 1;
+    // Find all invoices for this month/year that match the active room filter
+    const monthlyInvoices = invoicesData.filter(inv => {
+      // Room filter
+      if (activeRoomFilter !== 'all' && inv.room_id !== activeRoomFilter) return false;
+
+      const dateStr = inv.due_date || inv.created_at;
+      if (!dateStr) return false;
+      const dateParts = dateStr.split(/[-T ]/);
+      const invYear = parseInt(dateParts[0]);
+      const invMonth = parseInt(dateParts[1]);
+      return invYear === parseInt(selectedYear) && invMonth === month;
+    });
+
+    const totalElec = monthlyInvoices.reduce((sum, inv) => sum + (Number(inv.electricity_usage) || 0), 0);
+    const totalWater = monthlyInvoices.reduce((sum, inv) => sum + (Number(inv.water_usage) || 0), 0);
+
+    return {
+      month: `T${month}`,
+      elecValue: totalElec,
+      waterValue: totalWater,
+      isCurrent: parseInt(selectedYear) === currentYear && month === currentMonth,
+    };
+  });
+
+  const maxElec = Math.max(...usageChartDataRaw.map(d => d.elecValue), 100);
+  const maxWater = Math.max(...usageChartDataRaw.map(d => d.waterValue), 10);
+
+  const usageChartData = usageChartDataRaw.map(d => ({
+    ...d,
+    elecHeight: d.elecValue > 0 ? Math.max((d.elecValue / maxElec) * 100, 2) : 0,
+    waterHeight: d.waterValue > 0 ? Math.max((d.waterValue / maxWater) * 100, 2) : 0,
+  }));
+
+  const avgElec = Math.round(usageChartDataRaw.reduce((sum, d) => sum + d.elecValue, 0) / 12) || 0;
+  const avgWater = Math.round(usageChartDataRaw.reduce((sum, d) => sum + d.waterValue, 0) / 12) || 0;
+
+  const currentMonthData = usageChartData.find(d => d.isCurrent) || usageChartData[currentMonth - 1] || usageChartData[0];
+  const displayElec = currentMonthData?.elecValue || 0;
+  const displayWater = currentMonthData?.waterValue || 0;
+  // -------------------
 
   return (
     <motion.div
@@ -144,27 +202,42 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left">
-            <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4">
-              <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Bộ lọc Mức độ:</span>
-              <div className="flex gap-2">
-                {[
-                  { id: 'all', label: 'Tất cả' },
-                  { id: 'cao', label: 'Nguy cơ Cao' },
-                  { id: 'trung_binh', label: 'Trung Bình' },
-                  { id: 'thap', label: 'Thấp' },
-                ].map((filter) => (
-                  <button 
-                    key={filter.id}
-                    onClick={() => setActiveFilter(filter.id)}
-                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                      activeFilter === filter.id 
-                        ? 'bg-primary text-white shadow-md shadow-primary/20' 
-                        : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
+            <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 justify-between">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Bộ lọc Mức độ:</span>
+                <div className="flex gap-2">
+                  {[
+                    { id: 'all', label: 'Tất cả' },
+                    { id: 'cao', label: 'Nguy cơ Cao' },
+                    { id: 'trung_binh', label: 'Trung Bình' },
+                    { id: 'thap', label: 'Thấp' },
+                  ].map((filter) => (
+                    <button 
+                      key={filter.id}
+                      onClick={() => setActiveFilter(filter.id)}
+                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                        activeFilter === filter.id 
+                          ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Phòng:</span>
+                <select 
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-50 text-slate-700 border border-slate-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer min-w-[150px]"
+                  value={activeRoomFilter}
+                  onChange={(e) => setActiveRoomFilter(e.target.value)}
+                >
+                  <option value="all">Tất cả phòng</option>
+                  {uniqueRooms.map(room => (
+                    <option key={room.id} value={room.id}>{room.title}</option>
+                  ))}
+                </select>
               </div>
             </div>
           <div className="overflow-x-auto">
@@ -257,6 +330,113 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Usage Charts */}
+        <div className="mt-8 border-t border-slate-100 pt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-black text-slate-900 font-display">
+              Biểu đồ tiêu thụ {activeRoomFilter !== 'all' ? `phòng đã chọn` : 'tổng quan'} năm {selectedYear}
+            </h3>
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="text-sm font-bold bg-white border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-slate-700 shadow-sm"
+            >
+              {[0, 1, 2].map(offset => {
+                const year = new Date().getFullYear() - offset;
+                return <option key={year} value={year.toString()}>Năm {year}</option>
+              })}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Điện Chart */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 font-display">Điện (kWh)</h3>
+                  <p className="text-sm text-slate-500">Trung bình {avgElec} kWh/tháng</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-black text-amber-500">{displayElec}</span>
+                  <span className="text-sm text-slate-400 font-bold"> kWh</span>
+                </div>
+              </div>
+              
+              <div className="relative h-[250px] w-full flex items-end justify-between px-1 gap-1 md:gap-2">
+                {usageChartData.map((data, i) => (
+                  <div key={i} className="flex flex-col items-center gap-2 flex-1 h-full">
+                    <div className="w-full bg-slate-50 rounded-t-sm md:rounded-t-lg relative overflow-hidden group h-full">
+                      <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: `${data.elecHeight}%` }}
+                        transition={{ duration: 1, delay: i * 0.1 }}
+                        className="absolute bottom-0 left-0 right-0 bg-amber-500/20 rounded-t-sm md:rounded-t-lg"
+                      />
+                      <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: `${data.elecHeight * 0.7}%` }}
+                        transition={{ duration: 1.2, delay: i * 0.1 }}
+                        className="absolute bottom-0 left-0 right-0 bg-amber-500 rounded-t-sm md:rounded-t-lg shadow-[0_-4px_10px_rgba(245,158,11,0.3)]"
+                      />
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 flex items-center justify-center">
+                        <span className="bg-white text-amber-600 text-[9px] md:text-[10px] font-bold px-1 md:px-2 py-1 rounded shadow-sm">
+                          {data.elecValue}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] md:text-[10px] font-bold ${data.isCurrent ? 'text-slate-900' : 'text-slate-400'}`}>
+                      {data.month}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Nước Chart */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 font-display">Nước (khối)</h3>
+                  <p className="text-sm text-slate-500">Trung bình {avgWater} khối/tháng</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-black text-blue-500">{displayWater}</span>
+                  <span className="text-sm text-slate-400 font-bold"> khối</span>
+                </div>
+              </div>
+              
+              <div className="relative h-[250px] w-full flex items-end justify-between px-1 gap-1 md:gap-2">
+                {usageChartData.map((data, i) => (
+                  <div key={i} className="flex flex-col items-center gap-2 flex-1 h-full">
+                    <div className="w-full bg-slate-50 rounded-t-sm md:rounded-t-lg relative overflow-hidden group h-full">
+                      <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: `${data.waterHeight}%` }}
+                        transition={{ duration: 1, delay: i * 0.1 }}
+                        className="absolute bottom-0 left-0 right-0 bg-blue-500/20 rounded-t-sm md:rounded-t-lg"
+                      />
+                      <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: `${data.waterHeight * 0.7}%` }}
+                        transition={{ duration: 1.2, delay: i * 0.1 }}
+                        className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-t-sm md:rounded-t-lg shadow-[0_-4px_10px_rgba(59,130,246,0.3)]"
+                      />
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 flex items-center justify-center">
+                        <span className="bg-white text-blue-600 text-[9px] md:text-[10px] font-bold px-1 md:px-2 py-1 rounded shadow-sm">
+                          {data.waterValue}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] md:text-[10px] font-bold ${data.isCurrent ? 'text-slate-900' : 'text-slate-400'}`}>
+                      {data.month}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         </>

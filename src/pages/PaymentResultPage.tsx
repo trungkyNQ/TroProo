@@ -96,9 +96,21 @@ export const PaymentResultPage = ({ onNavigate, params }: PaymentResultPageProps
         className="bg-white p-10 rounded-[40px] max-w-md w-full shadow-2xl shadow-slate-200/50 text-center"
       >
         {status === 'loading' ? (
-          <div className="py-20 flex flex-col items-center">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-6 font-bold text-slate-500">Đang nhận kết quả thanh toán...</p>
+          <div className="animate-pulse py-4">
+            <div className="w-28 h-28 bg-slate-200 rounded-full mx-auto mb-8" />
+            <div className="h-6 bg-slate-200 rounded w-3/4 mx-auto mb-4" />
+            <div className="h-4 bg-slate-200 rounded w-5/6 mx-auto mb-8" />
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4 mb-8">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div className="w-16 h-4 bg-slate-200 rounded" />
+                <div className="w-24 h-6 bg-slate-200 rounded" />
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="w-24 h-4 bg-slate-200 rounded" />
+                <div className="w-20 h-4 bg-slate-200 rounded" />
+              </div>
+            </div>
+            <div className="w-full h-12 bg-slate-200 rounded-2xl" />
           </div>
         ) : status === 'success' ? (
           <>
