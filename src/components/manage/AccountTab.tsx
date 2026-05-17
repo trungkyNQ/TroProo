@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Messaging from '../shared/Messaging';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { AccountSkeleton } from './ManageSkeletons';
 
 interface AccountTabProps {
   user: SupabaseUser | null;
@@ -117,7 +118,7 @@ export const AccountTab = ({ user, roomsData, contractsData, supabase }: Account
       </div>
 
       {profileLoading ? (
-        <div className="flex items-center justify-center py-20"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
+        <AccountSkeleton />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Form Info */}

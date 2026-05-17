@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { 
   Wrench, Clock, CheckCircle, MessageSquare, PlusCircle, User, Home as HomeIcon
 } from 'lucide-react';
+import { SupportSkeleton } from './TenantSkeletons';
 
 interface TenantSupportTabProps {
   supportRequestsData: any[];
@@ -121,10 +122,7 @@ export const TenantSupportTab = ({
 
           <div className="p-4 md:p-8 flex flex-col gap-4">
             {loadingRequests ? (
-              <div className="py-20 flex flex-col items-center justify-center gap-4 text-slate-400">
-                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm font-bold uppercase tracking-widest">Đang tải yêu cầu...</p>
-              </div>
+              <SupportSkeleton />
             ) : filteredRequests.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-8 ring-8 ring-slate-50/50">

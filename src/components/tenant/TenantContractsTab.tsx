@@ -4,6 +4,7 @@ import {
   FileText, Clock, Building, Calendar, ShieldCheck, Eye, X, Loader2, Download
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { ContractsSkeleton } from './TenantSkeletons';
 
 interface TenantContractsTabProps {
   tenantRooms: any[];
@@ -140,9 +141,7 @@ export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContract
       </div>
 
       {loadingRooms ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <ContractsSkeleton />
       ) : tenantRooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200 px-6">
           <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-6">
@@ -240,8 +239,11 @@ export const TenantContractsTab = ({ tenantRooms, loadingRooms }: TenantContract
               
               <div className="p-8 overflow-y-auto bg-slate-50 relative">
                 {viewingContract.isLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm z-10">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-50/90 backdrop-blur-sm z-10">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-200 animate-pulse" />
+                      <div className="h-3 w-32 bg-slate-200 rounded animate-pulse" />
+                    </div>
                   </div>
                 ) : null}
 

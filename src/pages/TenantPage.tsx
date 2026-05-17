@@ -74,7 +74,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
   const [activeChatId, setActiveChatId] = useState<string | null>(initialParams?.activeChat || null);
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [tenantRooms, setTenantRooms] = useState<any[]>([]);
-  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [loadingRooms, setLoadingRooms] = useState(true);
   const [pendingContracts, setPendingContracts] = useState<any[]>([]);
   const [signingContract, setSigningContract] = useState<string | null>(null);
 
@@ -90,7 +90,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
 
   // Invoices states
   const [tenantInvoices, setTenantInvoices] = useState<any[]>([]);
-  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [showInvoiceDetailModal, setShowInvoiceDetailModal] = useState(false);
   const [updatingInvoice, setUpdatingInvoice] = useState(false);
@@ -100,7 +100,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
 
   // Support Requests states
   const [supportRequestsData, setSupportRequestsData] = useState<any[]>([]);
-  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(true);
   const [showAddRequestModal, setShowAddRequestModal] = useState(false);
   const [newRequestForm, setNewRequestForm] = useState({ roomId: '', title: '', description: '' });
   const [submittingRequest, setSubmittingRequest] = useState(false);
@@ -113,7 +113,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     bank_name: '', bank_account_number: '', bank_account_name: '',
     zalo_phone: '', emergency_contact_name: '', emergency_contact_phone: ''
   });
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaveMsg, setProfileSaveMsg] = useState('');
 
@@ -144,7 +144,24 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-      setTenantInvoices(data || []);
+
+      // Fetch owner bank info for all unique owner_ids
+      const ownerIds = [...new Set((data || []).map((inv: any) => inv.owner_id).filter(Boolean))];
+      let ownerMap: Record<string, any> = {};
+      if (ownerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, phone, bank_name, bank_account_number, bank_account_name')
+          .in('id', ownerIds);
+        (profiles || []).forEach((p: any) => { ownerMap[p.id] = p; });
+      }
+
+      const enriched = (data || []).map((inv: any) => ({
+        ...inv,
+        ownerProfile: ownerMap[inv.owner_id] || null
+      }));
+
+      setTenantInvoices(enriched);
     } catch (err) {
       console.error('Error fetching tenant invoices:', err);
     } finally {
@@ -606,6 +623,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
           {activeTab === 'invoices' && (
             <TenantInvoicesTab
               invoicesData={tenantInvoices}
+              loading={loadingInvoices}
               onViewInvoice={(inv) => {
                 setSelectedInvoice(inv);
                 setShowInvoiceDetailModal(true);
@@ -692,7 +710,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
         onConfirm={executePayInvoice}
         title="Xác nhận thanh toán"
         message="Bạn có chắc chắn đã thanh toán số tiền này cho Chủ trọ không? Hành động này sẽ gửi thông báo để chủ trọ kiểm tra và duyệt hóa đơn cho bạn."
-        confirmText="Đã chuyển khoản"
+        confirmText="Đã thanh toán"
         type="info"
         loading={updatingInvoice}
       />

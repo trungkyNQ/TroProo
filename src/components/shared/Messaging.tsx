@@ -418,8 +418,13 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
             </footer>
           </>
         ) : loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50">
-            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div className="flex-1 flex flex-col justify-end p-8 bg-slate-50/50 space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className={`flex items-end gap-3 max-w-[70%] animate-pulse ${i % 2 === 0 ? 'self-end flex-row-reverse' : ''}`}>
+                {i % 2 !== 0 && <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />}
+                <div className={`h-12 rounded-2xl bg-slate-200 ${i % 2 === 0 ? 'w-48 rounded-br-none' : 'w-36 rounded-bl-none'}`} />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50/50">

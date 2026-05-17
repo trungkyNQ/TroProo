@@ -15,6 +15,10 @@ import { DeleteConfirmModal } from '../components/manage/modals/DeleteConfirmMod
 import { CreateInvoiceModal } from '../components/manage/modals/CreateInvoiceModal';
 import { RiskAlerts } from '../components/RiskAnalysis/RiskAlerts';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
+import {
+  OverviewSkeleton, InvoicesSkeleton, ContractsSkeleton,
+  SupportSkeleton, ListingsSkeleton
+} from '../components/manage/ManageSkeletons';
 import { useToast } from '../context/ToastContext';
 
 
@@ -213,11 +217,11 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
   const [preSelectedRoomForInvoice, setPreSelectedRoomForInvoice] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [loadingRooms, setLoadingRooms] = useState(false);
-  const [loadingContracts, setLoadingContracts] = useState(false);
-  const [loadingInvoices, setLoadingInvoices] = useState(false);
-  const [loadingListings, setLoadingListings] = useState(false);
-  const [loadingSupport, setLoadingSupport] = useState(false);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+  const [loadingContracts, setLoadingContracts] = useState(true);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [loadingListings, setLoadingListings] = useState(true);
+  const [loadingSupport, setLoadingSupport] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -905,7 +909,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         <main className={`flex-1 flex flex-col ${activeTab === 'messages' ? '' : 'p-4 md:p-8 lg:p-10 max-w-7xl mx-auto w-full'}`}>
           {activeTab === 'overview' && (
             loading ? (
-              <div className="h-64 flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
+              <OverviewSkeleton />
             ) : (
               <OverviewTab 
                 user={user} 
@@ -944,6 +948,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
           )}
 
           {activeTab === 'invoices' && (
+            loadingInvoices ? <InvoicesSkeleton /> : (
             <InvoicesTab 
               invoicesData={invoicesData} 
               roomsData={roomsData}
@@ -957,6 +962,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
               onUpdateStatus={handleUpdateInvoiceStatus}
               onRefresh={fetchInvoices}
             />
+            )
           )}
 
           {activeTab === 'risk_alerts' && (
@@ -964,6 +970,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
           )}
 
           {activeTab === 'listings' && (
+            loadingListings ? <ListingsSkeleton /> : (
             <ListingsTab
               listingsData={listingsData}
               setShowAddListingModal={(v) => {
@@ -976,21 +983,26 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
               onEditListing={openEditListingModal}
               onDeleteListing={handleDeleteListing}
             />
+            )
           )}
 
           {activeTab === 'contracts' && (
+            loadingContracts ? <ContractsSkeleton /> : (
             <ContractsTab 
               contractsData={contractsData} 
               roomsData={roomsData} 
               onRefresh={fetchContracts} 
             />
+            )
           )}
 
           {activeTab === 'support' && (
+            loadingSupport ? <SupportSkeleton /> : (
             <SupportTab
               supportRequestsData={supportRequestsData}
               handleUpdateSupportRequest={handleUpdateSupportRequest}
             />
+            )
           )}
 
           {activeTab === 'messages' && (

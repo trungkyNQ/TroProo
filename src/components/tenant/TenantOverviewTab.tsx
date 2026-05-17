@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { 
   PlusCircle, Clock, BadgeCheck, User, Building, Calendar, Wallet, Layers, CheckCircle, MapPin, MessageCircle, Search
 } from 'lucide-react';
+import { OverviewSkeleton } from './TenantSkeletons';
 
 interface TenantOverviewTabProps {
   user: any;
@@ -27,10 +28,11 @@ export const TenantOverviewTab = ({
 }: TenantOverviewTabProps) => {
   const currentMonth = new Date().getMonth() + 1;
   
-  // Find current month value for display if showing current year
   const currentMonthData = chartData.find(d => d.isCurrent) || chartData[currentMonth - 1] || chartData[0];
   const displayElec = currentMonthData?.elecValue || 0;
   const displayWater = currentMonthData?.waterValue || 0;
+
+  if (loadingRooms) return <OverviewSkeleton />;
 
   return (
     <motion.div

@@ -34,6 +34,7 @@ import { AdminReportsTab } from '../components/admin/AdminReportsTab';
 import { AdminRiskTab } from '../components/admin/AdminRiskTab';
 import { AdminOrdersTab } from '../components/admin/AdminOrdersTab';
 import { AdminContractsTab } from '../components/admin/AdminContractsTab';
+import { AdminDashboardSkeleton, AdminTableSkeleton } from '../components/admin/AdminSkeletons';
 
 
 interface AdminPageProps {
@@ -1172,8 +1173,12 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
         {/* Main Content */}
         <main className="flex-1 flex flex-col p-4 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-hidden">
             
-            {/* VIEW: QUẢN LÝ TIN ĐĂNG */}
-            {currentView === 'listings' && (
+            {loading ? (
+              currentView === 'dashboard' ? <AdminDashboardSkeleton /> : <AdminTableSkeleton />
+            ) : (
+              <>
+                {/* VIEW: QUẢN LÝ TIN ĐĂNG */}
+                {currentView === 'listings' && (
             <AdminListingsTab 
               listingMode={listingMode} setListingMode={setListingMode}
               activeTab={activeTab} setActiveTab={setActiveTab}
@@ -1266,6 +1271,8 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
                 handleUpdateContract={handleUpdateContract}
                 handleDeleteContract={handleDeleteContract}
               />
+            )}
+              </>
             )}
 
         </main>

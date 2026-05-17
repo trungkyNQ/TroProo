@@ -1,14 +1,17 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Wallet, Eye, FileText, CheckCircle, CreditCard, ChevronRight } from 'lucide-react';
+import { Wallet, Eye, FileText, CheckCircle, CreditCard } from 'lucide-react';
+import { InvoicesSkeleton } from './TenantSkeletons';
 
 interface TenantInvoicesTabProps {
   invoicesData: any[];
   onViewInvoice: (invoice: any) => void;
   onPayInvoice: (invoiceId: string) => void;
+  loading?: boolean;
 }
 
-export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice }: TenantInvoicesTabProps) => {
+export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice, loading }: TenantInvoicesTabProps) => {
+  if (loading) return <InvoicesSkeleton />;
   const invoices = invoicesData.map(inv => ({
     id: inv.id,
     title: inv.title,
@@ -22,6 +25,7 @@ export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice }:
     statusColor: inv.status === 'paid' ? 'bg-green-100 text-green-700' : 
                  inv.status === 'unpaid' ? 'bg-orange-100 text-orange-700' : 
                  inv.status === 'pending_verification' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700',
+    ownerProfile: inv.ownerProfile || null,
     raw: inv
   }));
 
@@ -37,6 +41,8 @@ export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice }:
           <p className="text-slate-500 font-medium">Theo dõi và thanh toán hóa đơn hàng tháng.</p>
         </div>
       </div>
+
+
 
       {invoices.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200 px-6">
@@ -55,6 +61,7 @@ export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice }:
                   <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiêu đề (Phòng)</th>
                   <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hạn thanh toán</th>
                   <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng tiền</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Thông tin CK</th>
                   <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
                   <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                 </tr>
@@ -73,6 +80,19 @@ export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice }:
                     </td>
                     <td className="px-8 py-6">
                       <span className="font-black text-slate-900">{inv.amount}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      {inv.ownerProfile?.bank_account_number ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-black text-slate-700">{inv.ownerProfile.bank_name || '—'}</span>
+                          <span className="text-xs font-bold text-primary tracking-wider">{inv.ownerProfile.bank_account_number}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">
+                            {inv.ownerProfile.bank_account_name || inv.ownerProfile.full_name || '—'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-300 italic">Chưa cập nhật</span>
+                      )}
                     </td>
                     <td className="px-8 py-6">
                       <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${inv.statusColor}`}>
@@ -94,8 +114,8 @@ export const TenantInvoicesTab = ({ invoicesData, onViewInvoice, onPayInvoice }:
                             onClick={() => onPayInvoice(inv.id)}
                             className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary-hover transition-colors"
                           >
-                            <CreditCard className="w-4 h-4" />
-                            Đã CK
+                            <CheckCircle className="w-4 h-4" />
+                            Đã thanh toán
                           </button>
                         )}
                       </div>

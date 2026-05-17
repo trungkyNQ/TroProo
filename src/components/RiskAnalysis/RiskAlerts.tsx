@@ -91,8 +91,31 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
 
       {/* Main Content Area */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Stats skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 border-b border-slate-100">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="space-y-3 animate-pulse">
+                <div className="flex justify-between">
+                  <div className="h-3 bg-slate-100 rounded w-24" />
+                  <div className="h-8 w-8 bg-slate-100 rounded-xl" />
+                </div>
+                <div className="h-8 bg-slate-100 rounded w-12" />
+              </div>
+            ))}
+          </div>
+          {/* Table rows skeleton */}
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="px-6 py-4 flex items-center gap-6 border-b border-slate-50 animate-pulse">
+              <div className="h-4 w-4 bg-slate-100 rounded" />
+              <div className="h-7 w-20 bg-slate-100 rounded-lg" />
+              <div className="h-8 w-8 bg-slate-100 rounded-lg" />
+              <div className="h-4 flex-1 bg-slate-100 rounded" />
+              <div className="h-4 w-28 bg-slate-100 rounded" />
+              <div className="h-7 w-24 bg-slate-100 rounded-full" />
+              <div className="h-8 w-8 bg-slate-100 rounded-xl ml-auto" />
+            </div>
+          ))}
         </div>
       ) : alerts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200">

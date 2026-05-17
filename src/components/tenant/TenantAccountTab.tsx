@@ -4,6 +4,7 @@ import {
   User, Camera, Edit3, Mail, Phone, MapPin, CreditCard, ShieldAlert, LogOut, Settings, Info, Ban, Save, PhoneCall, Zap, Home, ShieldCheck, DoorOpen,
   Lock as LockIcon, CheckCircle, Layers, Users, BadgeCheck, Calendar, Wallet
 } from 'lucide-react';
+import { AccountSkeleton } from './TenantSkeletons';
 
 interface TenantAccountTabProps {
   user: any;
@@ -74,7 +75,7 @@ export const TenantAccountTab = ({
                 </div>
 
                 {profileLoading ? (
-                  <div className="flex items-center justify-center py-20"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
+                  <AccountSkeleton />
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 flex flex-col gap-6">

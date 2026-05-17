@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Receipt, Zap, Droplets, ShieldCheck, Home, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Receipt, Zap, Droplets, ShieldCheck, Home, AlertTriangle, CheckCircle, Building2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 interface InvoiceDetailModalProps {
@@ -166,6 +166,30 @@ export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading, hid
                 </div>
               </div>
 
+              {/* Thông tin chuyển khoản */}
+              {invoice.ownerProfile?.bank_account_number && invoice.status === 'unpaid' && (
+                <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Building2 className="w-4 h-4 text-primary" />
+                    <p className="text-[10px] font-black text-primary/80 uppercase tracking-widest">Thông tin chuyển khoản</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ngân hàng</p>
+                      <p className="font-black text-slate-900 text-sm">{invoice.ownerProfile.bank_name || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Số tài khoản</p>
+                      <p className="font-black text-primary text-sm tracking-widest">{invoice.ownerProfile.bank_account_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chủ tài khoản</p>
+                      <p className="font-black text-slate-900 text-sm uppercase">{invoice.ownerProfile.bank_account_name || invoice.ownerProfile.full_name || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
 
             {/* AI Alert Section */}
@@ -236,7 +260,7 @@ export const InvoiceDetailModal = ({ show, onClose, invoice, onPay, loading, hid
                   disabled={loading}
                   className="bg-primary hover:bg-primary-hover text-white font-black uppercase tracking-widest text-sm py-4 px-8 rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50"
                 >
-                  {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Đã CK'}
+                  {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Đã thanh toán'}
                 </button>
               )}
             </div>
