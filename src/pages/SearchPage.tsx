@@ -16,7 +16,9 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Heart
+  Heart,
+  Crown,
+  Sparkles
 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { SearchCardSkeleton } from '../components/shared/SharedSkeletons';
@@ -124,7 +126,7 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
     try {
       let query = supabase
         .from('listings')
-        .select('*')
+        .select('*, profiles(subscription_tier, full_name, avatar_url)')
         .eq('is_active', true)
         .eq('approval_status', 'approved');
 
@@ -149,7 +151,25 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
 
       const { data, error } = await query.limit(50);
       if (error) throw error;
-      setRealListings(data || []);
+
+      // Premium prioritizing order: enterprise -> pro -> free
+      const sortedData = (data || []).sort((a: any, b: any) => {
+        const tierA = a.profiles?.subscription_tier || 'free';
+        const tierB = b.profiles?.subscription_tier || 'free';
+        
+        const priority: Record<string, number> = {
+          'enterprise': 3,
+          'pro': 2,
+          'free': 1
+        };
+        
+        const prioA = priority[tierA] || 1;
+        const prioB = priority[tierB] || 1;
+        
+        return prioB - prioA;
+      });
+
+      setRealListings(sortedData);
     } catch (error) {
       console.error('Error fetching listings:', error);
     } finally {
@@ -318,90 +338,119 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
                   <SearchCardSkeleton key={i} />
                 ))
               ) : realListings.length > 0 ? (
-                realListings.map((item) => (
-                  <motion.div 
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -4 }}
-                    className="bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-primary/30 flex flex-col sm:flex-row hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group cursor-pointer"
-                  >
-                    <div className="relative w-full sm:w-64 h-56 sm:h-auto shrink-0 p-2">
-                      <div className="w-full h-full rounded-xl overflow-hidden relative">
-                        <img 
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                          src={item.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800'}
-                          alt={item.title}
-                          referrerPolicy="no-referrer"
-                        />
-                        {new Date(item.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
-                          <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-md">Mới</div>
-                        )}
-                        <button 
-                          onClick={(e) => handleToggleFavorite(e, item.id)}
-                          className={`absolute top-2 right-2 p-2 rounded-xl backdrop-blur transition-all shadow-sm ${
-                            userFavorites.has(item.id)
-                              ? 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
-                              : 'bg-white/90 text-slate-400 hover:text-rose-500 hover:scale-110'
-                          }`}
-                        >
-                          <Heart className={`w-4 h-4 ${userFavorites.has(item.id) ? 'fill-current' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="p-5 flex flex-col justify-between flex-1">
-                      <div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                          <h3 className="font-bold font-display text-lg text-slate-900 leading-tight group-hover:text-primary transition-colors line-clamp-2 sm:line-clamp-1 pr-4">
-                            {item.title}
-                          </h3>
-                          <span className="text-primary font-black text-xl whitespace-nowrap bg-primary/5 px-3 py-1 rounded-xl">
-                            {Number(item.price).toLocaleString()}đ<span className="text-xs text-slate-400 font-bold ml-1">/tháng</span>
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-1.5 text-slate-500 text-sm mb-4">
-                          <MapPin className="w-4 h-4 text-slate-400" />
-                          <span className="line-clamp-1 font-medium">{item.location || 'Đà Nẵng'}</span>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                          <div className="flex items-center gap-1.5">
-                            <Square className="w-4 h-4 text-slate-400" />
-                            <span>{item.area || '0'} m²</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Home className="w-4 h-4 text-slate-400" />
-                            <span>{item.type || 'Phòng trọ'}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                            <Check className="w-4 h-4" />
-                            <span>Đã kiểm duyệt</span>
-                          </div>
+                realListings.map((item) => {
+                  const tier = item.profiles?.subscription_tier || 'free';
+                  const isEnterprise = tier === 'enterprise';
+                  const isPro = tier === 'pro';
+                  
+                  let cardClass = "bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-primary/30 flex flex-col sm:flex-row hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group cursor-pointer relative";
+                  if (isEnterprise) {
+                    cardClass = "bg-white rounded-2xl overflow-hidden border-2 border-amber-400 hover:border-amber-500 bg-gradient-to-r from-amber-500/[0.02] to-transparent hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 flex flex-col sm:flex-row group cursor-pointer relative";
+                  } else if (isPro) {
+                    cardClass = "bg-white rounded-2xl overflow-hidden border-2 border-orange-400 hover:border-orange-500 bg-gradient-to-r from-orange-500/[0.02] to-transparent hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 flex flex-col sm:flex-row group cursor-pointer relative";
+                  }
+
+                  return (
+                    <motion.div 
+                      key={item.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      whileHover={{ y: -4 }}
+                      className={cardClass}
+                      onClick={() => onNavigate('listing-detail', { id: item.id })}
+                    >
+                      <div className="relative w-full sm:w-64 h-56 sm:h-auto shrink-0 p-2">
+                        <div className="w-full h-full rounded-xl overflow-hidden relative">
+                          <img 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                            src={item.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800'}
+                            alt={item.title}
+                            referrerPolicy="no-referrer"
+                          />
+                          {isEnterprise ? (
+                            <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-md flex items-center gap-1 z-10">
+                              <Crown className="w-3 h-3 text-white fill-current" /> Đối tác xác minh
+                            </div>
+                          ) : isPro ? (
+                            <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-md flex items-center gap-1 z-10">
+                              <Sparkles className="w-3 h-3 text-white fill-current animate-pulse" /> VIP PRO
+                            </div>
+                          ) : new Date(item.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 ? (
+                            <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-md z-10">Mới</div>
+                          ) : null}
+                          <button 
+                            onClick={(e) => handleToggleFavorite(e, item.id)}
+                            className={`absolute top-2 right-2 p-2 rounded-xl backdrop-blur transition-all shadow-sm z-10 ${
+                              userFavorites.has(item.id)
+                                ? 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
+                                : 'bg-white/90 text-slate-400 hover:text-rose-500 hover:scale-110'
+                            }`}
+                          >
+                            <Heart className={`w-4 h-4 ${userFavorites.has(item.id) ? 'fill-current' : ''}`} />
+                          </button>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm">
-                            <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Avatar" />
+                      <div className="p-5 flex flex-col justify-between flex-1">
+                        <div>
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
+                            <h3 className="font-bold font-display text-lg text-slate-900 leading-tight group-hover:text-primary transition-colors line-clamp-2 sm:line-clamp-1 pr-4">
+                              {item.title}
+                            </h3>
+                            <span className="text-primary font-black text-xl whitespace-nowrap bg-primary/5 px-3 py-1 rounded-xl">
+                              {Number(item.price).toLocaleString()}đ<span className="text-xs text-slate-400 font-bold ml-1">/tháng</span>
+                            </span>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-900">Chủ trọ</span>
-                            <span className="text-[10px] font-bold text-slate-400">Đăng {new Date(item.created_at).toLocaleDateString('vi-VN')}</span>
+                          
+                          <div className="flex items-center gap-1.5 text-slate-500 text-sm mb-4">
+                            <MapPin className="w-4 h-4 text-slate-400" />
+                            <span className="line-clamp-1 font-medium">{item.location || 'Đà Nẵng'}</span>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div className="flex items-center gap-1.5">
+                              <Square className="w-4 h-4 text-slate-400" />
+                              <span>{item.area || '0'} m²</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Home className="w-4 h-4 text-slate-400" />
+                              <span>{item.type || 'Phòng trọ'}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <Check className="w-4 h-4" />
+                              <span>Đã kiểm duyệt</span>
+                            </div>
                           </div>
                         </div>
-                        <button 
-                          className="text-sm font-black text-white bg-slate-900 hover:bg-primary px-5 py-2.5 rounded-xl transition-all shadow-md group-hover:shadow-primary/20"
-                          onClick={() => onNavigate('listing-detail', { id: item.id })}
-                        >
-                          Xem chi tiết
-                        </button>
+                        
+                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm">
+                              <img 
+                                className="w-full h-full object-cover" 
+                                src={item.profiles?.avatar_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"} 
+                                alt="Avatar" 
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-slate-900">{item.profiles?.full_name || 'Chủ trọ'}</span>
+                              <span className="text-[10px] font-bold text-slate-400">Đăng {new Date(item.created_at).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                          </div>
+                          <button 
+                            className="text-sm font-black text-white bg-slate-900 hover:bg-primary px-5 py-2.5 rounded-xl transition-all shadow-md group-hover:shadow-primary/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onNavigate('listing-detail', { id: item.id });
+                            }}
+                          >
+                            Xem chi tiết
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))
+                    </motion.div>
+                  );
+                })
               ) : (
                 <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 flex flex-col items-center justify-center">
                   <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">

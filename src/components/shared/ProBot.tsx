@@ -268,6 +268,32 @@ export default function ProBot({ onNavigate }: ProBotProps) {
         </button>
       )}
 
+      {/* ── Zalo Chat Button ── */}
+      {!isOpen && (
+        <button
+          onClick={() => window.open('https://zalo.me/0777745720', '_blank')}
+          className="fixed bottom-[160px] right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 z-50 group bg-transparent"
+          aria-label="Nhắn tin Zalo"
+        >
+          <svg 
+            viewBox="0 0 24 24" 
+            className="w-full h-full drop-shadow-lg" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="12" cy="12" r="11.5" fill="#0068FF" />
+            <path d="M12 5.5c-3.87 0-7 2.76-7 6.15 0 1.72.79 3.28 2.07 4.39-.13.61-.49 1.76-.54 1.96-.08.28.09.27.27.15.26-.16 2.18-1.5 2.8-1.9.57.16 1.18.25 1.8.25 3.87 0 7-2.76 7-6.15s-3.13-6.15-7-6.15z" fill="#FFFFFF" />
+            <text x="12" y="13.2" fontFamily="Arial, Helvetica, sans-serif" fontWeight="900" fontSize="4.6" fill="#0068FF" textAnchor="middle" style={{ letterSpacing: '-0.3px' }}>zalo</text>
+          </svg>
+          <div className="absolute right-20 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+            <div className="bg-gradient-to-r from-[#0068ff] to-[#2e82f2] text-white text-[13px] font-bold px-4 py-2.5 rounded-2xl shadow-xl shadow-blue-500/20 whitespace-nowrap border border-white/20 flex items-center gap-2">
+              <span>Nhắn tin Zalo: 0777.745.720</span>
+              <span className="text-base animate-bounce">💬</span>
+            </div>
+            <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#2e82f2] -ml-[1px]"></div>
+          </div>
+        </button>
+      )}
+
       {/* ── Floating Button ── */}
       <button
         id="probot-toggle"
@@ -310,7 +336,7 @@ export default function ProBot({ onNavigate }: ProBotProps) {
             initial={{ opacity: 0, x: 20, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 20, scale: 0.9 }}
-            className="fixed bottom-[160px] right-6 w-72 bg-white rounded-2xl shadow-2xl border border-orange-100 p-3 z-40 cursor-pointer overflow-hidden group hover:border-orange-300 transition-colors"
+            className="fixed bottom-[228px] right-6 w-72 bg-white rounded-2xl shadow-2xl border border-orange-100 p-3 z-40 cursor-pointer overflow-hidden group hover:border-orange-300 transition-colors"
             onClick={() => {
               markAllRead();
               setIsOpen(false);

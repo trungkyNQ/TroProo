@@ -553,7 +553,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     }
   };
 
-  const navItems = [
+  const navItems: { id: string; label: string; icon: any; badge?: number | string }[] = [
     { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
     { id: 'rooms', label: 'Phòng của tôi', icon: Bed },
     { id: 'contracts', label: 'Hợp đồng', icon: FileText },

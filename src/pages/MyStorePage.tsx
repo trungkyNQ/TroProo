@@ -17,6 +17,7 @@ interface MyStorePageProps {
   onNavigate: (page: string, params?: any) => void;
   user: SupabaseUser | null;
   onLogout: () => void;
+  params?: any;
 }
 
 // ── Status helpers ──────────────────────────────────────────────

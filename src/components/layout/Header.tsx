@@ -1,6 +1,6 @@
 import React, { ReactNode, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, User, LogOut, Menu, X, Heart, MessageSquare, Plus, ShoppingBag, Phone, LayoutDashboard, Bed, Shield } from 'lucide-react';
+import { Home, User, LogOut, Menu, X, Heart, MessageSquare, Plus, ShoppingBag, Phone, LayoutDashboard, Bed, Shield, Crown, Sparkles } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { NotificationBell } from '../shared/NotificationBell';
 import { supabase } from '../../lib/supabase';
@@ -20,6 +20,25 @@ interface HeaderProps {
 export const Header = ({ user, onLogout, onNavigate, activePath, children }: HeaderProps) => {
   const { role: currentRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'enterprise'>('free');
+
+  useEffect(() => {
+    if (!user || currentRole !== 'landlord') {
+      setSubscriptionTier('free');
+      return;
+    }
+    const fetchTier = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', user.id)
+        .single();
+      if (data?.subscription_tier) {
+        setSubscriptionTier(data.subscription_tier as any);
+      }
+    };
+    fetchTier();
+  }, [user, currentRole]);
 
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
@@ -233,12 +252,40 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
                   else if (currentRole === 'landlord') onNavigate('manage');
                   else if (currentRole === 'admin') onNavigate('admin');
                 }}>
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all border border-primary/20 shrink-0">
+                  <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all border shrink-0 ${
+                    subscriptionTier === 'enterprise'
+                      ? 'bg-amber-50 text-amber-600 border-amber-300 group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500'
+                      : subscriptionTier === 'pro'
+                        ? 'bg-orange-50 text-orange-500 border-orange-300 group-hover:bg-orange-500 group-hover:text-white group-hover:border-orange-500'
+                        : 'bg-primary/10 text-primary border-primary/20 group-hover:bg-primary group-hover:text-white'
+                  }`}>
                     <User className="w-5 h-5" />
+                    {subscriptionTier === 'enterprise' && (
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md shadow-amber-500/30 border border-white">
+                        <Crown className="w-2.5 h-2.5 text-white fill-current" />
+                      </span>
+                    )}
+                    {subscriptionTier === 'pro' && (
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-md shadow-orange-500/30 border border-white">
+                        <Sparkles className="w-2.5 h-2.5 text-white fill-current" />
+                      </span>
+                    )}
                   </div>
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-primary transition-colors hidden sm:block">
-                    {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                  </span>
+                  <div className="hidden sm:flex flex-col leading-none">
+                    <span className="text-sm font-bold text-slate-700 group-hover:text-primary transition-colors">
+                      {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                    </span>
+                    {subscriptionTier === 'enterprise' && (
+                      <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-0.5 mt-0.5">
+                        <Crown className="w-2.5 h-2.5 fill-current" /> ĐỐI TÁC
+                      </span>
+                    )}
+                    {subscriptionTier === 'pro' && (
+                      <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 flex items-center gap-0.5 mt-0.5">
+                        <Sparkles className="w-2.5 h-2.5 fill-current" /> VIP PRO
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button 
                   onClick={onLogout}
@@ -249,9 +296,16 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-4 ml-2">
+              <div className="flex items-center gap-3.5 ml-2">
+                <button
+                  onClick={() => onNavigate('login')}
+                  className="h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-orange-600 hover:to-orange-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all duration-200 border border-orange-400/20 shrink-0 hidden sm:flex"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Đăng tin miễn phí</span>
+                </button>
                 <button onClick={() => onNavigate('login')} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors hidden sm:block">Đăng nhập</button>
-                <button onClick={() => onNavigate('register')} className="bg-primary text-white text-sm font-bold px-6 py-3 rounded-2xl hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 hidden sm:block">Đăng ký</button>
+                <button onClick={() => onNavigate('register')} className="bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-bold px-5 py-2.5 rounded-2xl transition-all border border-slate-200 hover:scale-105 active:scale-95 hidden sm:block">Đăng ký</button>
               </div>
             )}
 
@@ -403,16 +457,25 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
                   <div className="flex flex-col gap-2">
                     <button 
                       onClick={() => { setIsMobileMenuOpen(false); onNavigate('login'); }}
-                      className="w-full py-3 rounded-xl text-slate-600 hover:bg-slate-50 font-bold text-sm transition-all text-center border border-slate-200"
+                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary to-orange-500 text-white font-black text-sm transition-all text-center flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95"
                     >
-                      Đăng nhập
+                      <Plus className="w-5 h-5" />
+                      <span>Đăng tin miễn phí</span>
                     </button>
-                    <button 
-                      onClick={() => { setIsMobileMenuOpen(false); onNavigate('register'); }}
-                      className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm transition-all text-center shadow-lg shadow-orange-500/20"
-                    >
-                      Đăng ký
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <button 
+                        onClick={() => { setIsMobileMenuOpen(false); onNavigate('login'); }}
+                        className="w-full py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-bold text-xs transition-all text-center border border-slate-200"
+                      >
+                        Đăng nhập
+                      </button>
+                      <button 
+                        onClick={() => { setIsMobileMenuOpen(false); onNavigate('register'); }}
+                        className="w-full py-2.5 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold text-xs transition-all text-center border border-slate-200"
+                      >
+                        Đăng ký
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

@@ -22,7 +22,7 @@ import {
 import { useToast } from '../context/ToastContext';
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import Messaging from '../components/shared/Messaging';
@@ -84,6 +84,8 @@ import {
   ArrowLeft,
   Trash2,
   Zap,
+  Crown,
+  ArrowRight,
   Droplets,
   ShieldCheck,
   Wrench,
@@ -172,6 +174,22 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
     electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: ''
   });
 
+  const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const [showLimitUpgradeModal, setShowLimitUpgradeModal] = useState(false);
+
+  const checkListingLimit = (isEditing: boolean = false) => {
+    if (isEditing) return true;
+    if (subscriptionTier === 'free' && listingsData.length >= 2) {
+      setShowLimitUpgradeModal(true);
+      return false;
+    }
+    if (subscriptionTier === 'pro' && listingsData.length >= 10) {
+      setShowLimitUpgradeModal(true);
+      return false;
+    }
+    return true;
+  };
+
   // Edit Room Modal states
   const [showEditRoomModal, setShowEditRoomModal] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -231,13 +249,6 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
     const urlAction = params.get('action');
     if (urlAction === 'add-listing' || initialParams?.action === 'add-listing') {
       setActiveTab('listings');
-      setListingForm({ 
-        title: '', description: '', price: '', area: '', type: 'Phòng trọ', 
-        location: '', street: '', image_url: '', 
-        electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' 
-      });
-      setEditingListingId(null);
-      setShowAddListingModal(true);
 
       // Clear query params to prevent reopening modal on page refreshes
       const url = new URL(window.location.href);
@@ -260,6 +271,18 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       ]).finally(() => setLoading(false));
     }
   }, [user]);
+
+  // Cleanup modals when unmounting
+  useEffect(() => {
+    return () => {
+      setShowAddListingModal(false);
+      setShowAddRoomModal(false);
+      setShowEditRoomModal(false);
+      setShowDeleteConfirmModal(false);
+      setShowRoomDetailModal(false);
+      setShowCreateInvoiceModal(false);
+    };
+  }, []);
 
   const fetchRooms = async () => {
     setLoadingRooms(true);
@@ -302,8 +325,13 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
     try {
       const { data } = await supabase.from('listings').select('*').eq('owner_id', user?.id);
       setListingsData(data || []);
+
+      const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user?.id).single();
+      if (profile) {
+        setSubscriptionTier(profile.subscription_tier as any || 'free');
+      }
     } catch (err) {
-      console.error('Error fetching listings:', err);
+      console.error('Error fetching listings/subscription:', err);
     } finally {
       setLoadingListings(false);
     }
@@ -535,6 +563,12 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
   // Tạo hoặc Cập nhật bài đăng
   const handleAddListing = async () => {
     if (!listingForm.title || !listingForm.price) return;
+    
+    // Kiểm tra giới hạn đăng tin khi thêm tin mới (editingListingId là null)
+    if (!editingListingId && !checkListingLimit(false)) {
+      return;
+    }
+
     setAddingListing(true);
     try {
       const payload = {
@@ -1227,6 +1261,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         onDelete={handleDeleteRoom}
         onNavigateToTab={setActiveTab}
         onCreateListing={(room) => {
+          if (!checkListingLimit(false)) return;
           setEditingListingId(null);
           setListingForm(f => ({
             ...f,
@@ -1252,6 +1287,86 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         confirmText="Xác nhận xóa"
         type="danger"
       />
+
+      {/* Limit Upgrade Promotion Modal */}
+      <AnimatePresence>
+        {showLimitUpgradeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLimitUpgradeModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[40px] p-8 text-center shadow-2xl border border-slate-100 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-orange-500 to-amber-500 animate-pulse" />
+              
+              <button 
+                onClick={() => setShowLimitUpgradeModal(false)}
+                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors flex items-center justify-center active:scale-90"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="space-y-6">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-orange-500/20">
+                  <Crown className="w-10 h-10 animate-bounce" />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-slate-900 font-display">Đạt Giới Hạn Đăng Tin!</h3>
+                  <p className="text-sm font-medium text-slate-500 leading-relaxed px-2">
+                    Tài khoản của bạn đang dùng <span className="text-primary font-black uppercase">{subscriptionTier === 'free' ? 'Gói Miễn Phí' : 'Gói Chuyên Nghiệp'}</span>, chỉ được đăng tối đa <span className="font-bold text-slate-900">{subscriptionTier === 'free' ? '2' : '10'} bài đăng</span>.
+                  </p>
+                </div>
+
+                <div className="bg-orange-50/50 p-6 rounded-3xl border border-orange-100/50 text-left space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-black text-orange-600 uppercase tracking-widest">
+                    <Sparkles className="w-4 h-4 text-orange-500" /> Đặc quyền gói VIP Pro:
+                  </div>
+                  <ul className="space-y-2 text-xs font-bold text-slate-600">
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Đăng tối đa 10 tin chất lượng cao
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Tặng 5 lượt đẩy tin Top tự động
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Nhãn VIP nổi bật trên trang chủ
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setShowLimitUpgradeModal(false);
+                      onNavigate('pricing');
+                    }}
+                    className="w-full bg-primary text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest hover:bg-primary-hover shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+                  >
+                    Nâng cấp tài khoản VIP ngay
+                    <ArrowRight className="w-4 h-4 ml-1 opacity-50 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowLimitUpgradeModal(false)}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-colors"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
 
   );

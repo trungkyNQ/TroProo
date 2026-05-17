@@ -19,7 +19,10 @@ import {
   Cctv,
   Loader2,
   AlertTriangle,
-  Heart
+  Heart,
+  ShieldAlert,
+  Crown,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
@@ -271,7 +274,7 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
             .eq('id', params.id)
             .single();
 
-          let landlordData = mockListing.landlord;
+          let landlordData: any = mockListing.landlord;
 
           if (data && data.owner_id) {
             const { data: profile } = await supabase
@@ -287,7 +290,8 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
                 avatar: profile.avatar_url || mockListing.landlord.avatar,
                 joinDate: profile.created_at
                   ? `Tháng ${new Date(profile.created_at).getMonth() + 1}, ${new Date(profile.created_at).getFullYear()}`
-                  : mockListing.landlord.joinDate
+                  : mockListing.landlord.joinDate,
+                subscriptionTier: profile.subscription_tier || 'free'
               };
             }
           }
@@ -621,11 +625,32 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
             <div className="lg:sticky lg:top-24 space-y-6">
 
               {/* Landlord Card */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
-                <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-indigo-100 mb-4">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center relative overflow-hidden">
+                {listing.landlord.subscriptionTier === 'enterprise' && (
+                  <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-black px-2 py-0.5 rounded-bl uppercase tracking-widest shadow-sm flex items-center gap-0.5 z-10">
+                    <Crown className="w-2.5 h-2.5 fill-current" /> Đối tác
+                  </div>
+                )}
+                {listing.landlord.subscriptionTier === 'pro' && (
+                  <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded-bl uppercase tracking-widest shadow-sm flex items-center gap-0.5 z-10">
+                    <Sparkles className="w-2.5 h-2.5 fill-current animate-pulse" /> VIP PRO
+                  </div>
+                )}
+                <div className={`w-20 h-20 mx-auto rounded-full overflow-hidden border-2 mb-4 ${
+                  listing.landlord.subscriptionTier === 'enterprise' ? 'border-amber-400' :
+                  listing.landlord.subscriptionTier === 'pro' ? 'border-orange-400' : 'border-indigo-100'
+                }`}>
                   <img src={listing.landlord.avatar} alt="Avatar" className="w-full h-full object-cover" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-1">{listing.landlord.name}</h3>
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <h3 className="text-lg font-bold text-gray-900">{listing.landlord.name}</h3>
+                  {listing.landlord.subscriptionTier === 'enterprise' && (
+                    <span title="Đối tác xác minh"><Crown className="w-4 h-4 text-amber-500 fill-current" /></span>
+                  )}
+                  {listing.landlord.subscriptionTier === 'pro' && (
+                    <span title="VIP PRO"><Sparkles className="w-4 h-4 text-orange-500 fill-current animate-pulse" /></span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-500 mb-4">Tham gia từ {listing.landlord.joinDate}</p>
 
                 <div className="space-y-3">
@@ -728,8 +753,3 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
     </div>
   );
 };
-
-// Simple Mock component to fix Missing Icon import
-const ShieldAlert = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
-);
