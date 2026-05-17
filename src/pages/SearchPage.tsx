@@ -242,7 +242,7 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
           </aside>
 
           <div className="flex-1">
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-1 gap-3 md:gap-6">
               
               {loading ? (
                 [1, 2, 3].map((i) => (

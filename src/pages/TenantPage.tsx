@@ -36,7 +36,7 @@ import {
   ChevronRight,
   MessageCircle, Search, Users, Phone, Video, Info, ImageIcon, Smile, 
   Send, Mail, PhoneCall, Ban, Edit3, Settings,
-  Maximize2, Layers, CheckCircle, Home, Zap, ShieldCheck, X,
+  Maximize2, Layers, CheckCircle, Home, Zap, ShieldCheck, X, Menu,
   BadgeCheck, Lock as LockIcon, Camera, Clock, Filter, ArrowUpDown, MoreVertical, Construction
 } from 'lucide-react';
 
@@ -61,6 +61,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Update URL and LocalStorage when tab changes
   useEffect(() => {
@@ -540,7 +541,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
   const avgWater = Math.round(usageChartDataRaw.reduce((sum, d) => sum + d.waterValue, 0) / 12) || 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative overflow-x-hidden">
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="hidden lg:flex w-72 bg-white border-r border-slate-200 flex-col sticky top-16 h-[calc(100vh-64px)] overflow-y-auto">
@@ -576,7 +577,112 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
           </div>
         </aside>
 
+        {/* Mobile Slide Drawer */}
+        <AnimatePresence mode="wait">
+          {isMobileMenuOpen && (
+            <div className="lg:hidden fixed inset-0 z-50">
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              />
+              
+              {/* Panel */}
+              <motion.div 
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute top-0 left-0 bottom-0 w-72 bg-white p-6 flex flex-col shadow-2xl"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3 text-primary">
+                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                      <Building className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-lg font-bold text-slate-900 font-display">Người Thuê</h2>
+                  </div>
+                  <button 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center text-slate-600 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Nav list */}
+                <nav className="space-y-1.5 flex-1 overflow-y-auto pr-1">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-semibold text-sm ${
+                        activeTab === item.id 
+                          ? 'bg-primary/10 text-primary' 
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-auto bg-primary text-white text-[10px] px-2 py-0.5 rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
+                
+                {/* Logout footer */}
+                <div className="pt-6 border-t border-slate-100">
+                  <button 
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-rose-500 hover:bg-rose-50 font-bold text-sm transition-all"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         <main className={`flex-1 flex flex-col ${activeTab === 'messages' ? '' : 'p-4 md:p-8 lg:p-10 max-w-7xl mx-auto w-full'} overflow-y-auto`}>
+          {/* Mobile Top Navigation Header */}
+          <div className="lg:hidden flex items-center justify-between bg-white px-4 py-3 border border-slate-200 mb-6 sticky top-0 z-40 shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="w-10 h-10 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 transition-colors shadow-sm"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-500 text-xs hidden sm:inline">Dashboard</span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
+                <span className="font-black text-primary text-sm flex items-center gap-1.5">
+                  {React.createElement(navItems.find(item => item.id === activeTab)?.icon || LayoutDashboard, { className: "w-4 h-4" })}
+                  {navItems.find(item => item.id === activeTab)?.label}
+                </span>
+              </div>
+            </div>
+            
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm border border-primary/20 shadow-sm">
+              T
+            </div>
+          </div>
+
           {activeTab === 'overview' && (
             <TenantOverviewTab 
               user={user} 

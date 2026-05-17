@@ -64,8 +64,12 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
 
           if (!error && data) {
             setFullName(data.full_name || user.email?.split('@')[0] || '');
-            setPhone(data.phone || '');
-            setStreetAddress(data.permanent_address || '');
+            const rawPhone = data.phone || '';
+            const formattedPhone = rawPhone.startsWith('+84') 
+              ? '0' + rawPhone.slice(3) 
+              : rawPhone;
+            setPhone(formattedPhone);
+            setStreetAddress(''); // Bỏ autofill để người dùng tự nhập địa chỉ giao hàng
           } else {
              setFullName(user.email?.split('@')[0] || '');
           }
@@ -325,12 +329,12 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
                            </div>
                         </div>
                         <div>
-                           <label className="block text-sm font-bold text-slate-700 mb-2">Phường/Xã & Số nhà <span className="text-red-500">*</span></label>
+                           <label className="block text-sm font-bold text-slate-700 mb-2">Đường & Số nhà <span className="text-red-500">*</span></label>
                            <input 
                               type="text"
                               value={streetAddress}
                               onChange={(e) => setStreetAddress(e.target.value)}
-                              placeholder="Phường/Xã, tên đường, ngõ hẻm..."
+                              placeholder="Số nhà, tên đường, ngõ hẻm..."
                               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-medium text-slate-900"
                            />
                         </div>
@@ -379,7 +383,6 @@ export const CheckoutPage = ({ onNavigate, user, onLogout, params }: CheckoutPag
                                  <p className="text-sm text-slate-500 mt-1">An toàn, bảo mật, xác nhận ngay lập tức</p>
                               </div>
                            </div>
-                           <img src="https://vnpay.vn/s1/vnpay.vn/images/logo.svg" alt="VNPAY" className="h-6" />
                         </div>
                         <input type="radio" value="vnpay" checked={paymentMethod === 'vnpay'} onChange={() => setPaymentMethod('vnpay')} className="hidden" />
                      </label>

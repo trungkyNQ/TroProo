@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
   LayoutDashboard, 
@@ -19,7 +19,10 @@ import {
   Edit,
   ShoppingCart,
   ShieldAlert,
-  FileSignature
+  FileSignature,
+  Menu,
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Page } from '../components/layout/Header';
@@ -141,6 +144,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   };
 
   const [currentView, setCurrentView] = useState<AdminView>(getInitialView());
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Listings State
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>(
@@ -1102,9 +1106,19 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     return `${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}`;
   };
 
+  const adminNavItems = [
+    { id: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard },
+    { id: 'listings', label: 'Quản lý tin đăng', icon: FileText },
+    { id: 'users', label: 'Quản lý người dùng', icon: Users },
+    { id: 'reports', label: 'Báo cáo và phản hồi', icon: BarChart },
+    { id: 'risks', label: 'Cảnh báo Rủi ro AI', icon: ShieldAlert },
+    { id: 'orders', label: 'Quản lý Đơn hàng', icon: ShoppingCart },
+    { id: 'contracts', label: 'Quản lý Hợp đồng', icon: FileSignature }
+  ];
+
   // ===================== RENDER =====================
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative overflow-x-hidden">
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="hidden lg:flex w-72 bg-white border-r border-slate-200 flex-col sticky top-16 h-[calc(100vh-64px)] overflow-y-auto shrink-0">
@@ -1117,61 +1131,125 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
             </div>
             
             <nav className="space-y-2">
-              <button 
-                onClick={() => setCurrentView('dashboard')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'dashboard' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                <LayoutDashboard className="w-5 h-5" />
-                <span>Bảng điều khiển</span>
-              </button>
-              <button 
-                onClick={() => setCurrentView('listings')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'listings' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                <FileText className="w-5 h-5" />
-                <span>Quản lý tin đăng</span>
-              </button>
-              <button 
-                onClick={() => setCurrentView('users')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'users' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                <Users className="w-5 h-5" />
-                <span>Quản lý người dùng</span>
-              </button>
-              <button 
-                onClick={() => setCurrentView('reports')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'reports' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                <BarChart className="w-5 h-5" />
-                <span>Báo cáo và phản hồi</span>
-              </button>
-              <button 
-                onClick={() => setCurrentView('risks')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'risks' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                <ShieldAlert className="w-5 h-5" />
-                <span>Cảnh báo Rủi ro AI</span>
-              </button>
-              <button 
-                onClick={() => setCurrentView('orders')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'orders' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                <ShoppingCart className="w-5 h-5" />
-                <span>Quản lý Đơn hàng</span>
-              </button>
-              <button 
-                onClick={() => setCurrentView('contracts')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${currentView === 'contracts' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                <FileSignature className="w-5 h-5" />
-                <span>Quản lý Hợp đồng</span>
-              </button>
+              {adminNavItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentView(item.id as any)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${
+                    currentView === item.id 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </nav>
           </div>
         </aside>
 
+        {/* Mobile Slide Drawer */}
+        <AnimatePresence mode="wait">
+          {isMobileMenuOpen && (
+            <div className="lg:hidden fixed inset-0 z-50">
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              />
+              
+              {/* Panel */}
+              <motion.div 
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute top-0 left-0 bottom-0 w-72 bg-white p-6 flex flex-col shadow-2xl"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3 text-primary">
+                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                      <Shield className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-lg font-bold text-slate-900 font-display">Quản Trị</h2>
+                  </div>
+                  <button 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center text-slate-600 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Nav list */}
+                <nav className="space-y-1.5 flex-1 overflow-y-auto pr-1">
+                  {adminNavItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id as any);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-semibold text-sm ${
+                        currentView === item.id 
+                          ? 'bg-primary/10 text-primary' 
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </nav>
+                
+                {/* Logout footer */}
+                <div className="pt-6 border-t border-slate-100">
+                  <button 
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-rose-500 hover:bg-rose-50 font-bold text-sm transition-all"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         {/* Main Content */}
-        <main className="flex-1 flex flex-col p-4 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-hidden">
+        <main className="flex-1 flex flex-col p-4 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-y-auto">
+          {/* Mobile Top Navigation Header */}
+          <div className="lg:hidden flex items-center justify-between bg-white px-4 py-3 border border-slate-200 mb-6 sticky top-0 z-40 shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="w-10 h-10 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 transition-colors shadow-sm"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-500 text-xs hidden sm:inline">Quản Trị</span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
+                <span className="font-black text-primary text-sm flex items-center gap-1.5">
+                  {React.createElement(adminNavItems.find(item => item.id === currentView)?.icon || LayoutDashboard, { className: "w-4 h-4" })}
+                  {adminNavItems.find(item => item.id === currentView)?.label}
+                </span>
+              </div>
+            </div>
+            
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm border border-primary/20 shadow-sm">
+              A
+            </div>
+          </div>
             
             {loading ? (
               currentView === 'dashboard' ? <AdminDashboardSkeleton /> : <AdminTableSkeleton />
