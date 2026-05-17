@@ -18,7 +18,8 @@ import {
   ParkingCircle,
   Cctv,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Heart
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
@@ -45,6 +46,66 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
   const [isReporting, setIsReporting] = useState(false);
 
   const { showToast } = useToast();
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    if (user && listing?.id) {
+      checkIfFavorite();
+    }
+  }, [user, listing?.id]);
+
+  const checkIfFavorite = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('favorite_listings')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('listing_id', listing.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsFavorite(!!data);
+    } catch (err) {
+      console.error('Error checking favorite status:', err);
+    }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      showToast('Vui lòng đăng nhập để lưu tin yêu thích! 🔑', 'warning');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+         const { error } = await supabase
+           .from('favorite_listings')
+           .delete()
+           .eq('user_id', user.id)
+           .eq('listing_id', listing.id);
+
+         if (error) throw error;
+         setIsFavorite(false);
+         showToast('Đã bỏ lưu tin đăng này.', 'success');
+      } else {
+         const { error } = await supabase
+           .from('favorite_listings')
+           .insert({
+             user_id: user.id,
+             listing_id: listing.id
+           });
+
+         if (error) throw error;
+         setIsFavorite(true);
+         showToast('Đã lưu bài viết vào tin yêu thích! ❤️', 'success');
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      showToast('Đã xảy ra lỗi, vui lòng thử lại.', 'error');
+    }
+  };
 
   const handleStartMessage = async () => {
     // Guard: yêu cầu đăng nhập trước
@@ -380,6 +441,17 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
                   <ShieldCheck className="w-4 h-4 mr-1" />
                   Tin đã xác thực
                 </div>
+                <button
+                  onClick={handleToggleFavorite}
+                  className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-sm transition-all shadow-md ${
+                    isFavorite
+                      ? 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
+                      : 'bg-white/90 text-gray-400 hover:text-rose-500 hover:scale-105'
+                  }`}
+                  title={isFavorite ? 'Bỏ lưu tin' : 'Lưu tin yêu thích'}
+                >
+                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                </button>
               </div>
               <div className="grid grid-cols-4 gap-4">
                 {listing.images.map((img: string, idx: number) => (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, CheckCircle2, AlertCircle, Wrench, FileText, DollarSign, X } from 'lucide-react';
+import { Bell, CheckCircle2, AlertCircle, Wrench, FileText, DollarSign, X, ShoppingBag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'motion/react';
@@ -116,6 +116,8 @@ export const NotificationBell = ({ user, onNavigate }: { user: User, onNavigate:
       case 'invoice_alert': return <DollarSign className="w-5 h-5 text-orange-500" />;
       case 'maintenance_report': return <Wrench className="w-5 h-5 text-amber-600" />;
       case 'profile_update_request': return <AlertCircle className="w-5 h-5 text-amber-600" />;
+      case 'new_order': return <ShoppingBag className="w-5 h-5 text-emerald-600" />;
+      case 'order_status': return <ShoppingBag className="w-5 h-5 text-indigo-500" />;
       default: return <Bell className="w-5 h-5 text-blue-500" />;
     }
   };
@@ -129,6 +131,8 @@ export const NotificationBell = ({ user, onNavigate }: { user: User, onNavigate:
       case 'invoice_alert': return 'bg-amber-50';
       case 'maintenance_report': return 'bg-yellow-50';
       case 'profile_update_request': return 'bg-amber-50';
+      case 'new_order': return 'bg-emerald-50';
+      case 'order_status': return 'bg-indigo-50';
       default: return 'bg-blue-50';
     }
   };

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { SearchCardSkeleton } from '../components/shared/SharedSkeletons';
+import { useToast } from '../context/ToastContext';
 
 const districts = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'];
 
@@ -38,6 +39,74 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
   const [priceRange, setPriceRange] = useState(initialParams?.price || 'all');
   const [roomType, setRoomType] = useState(initialParams?.type || 'all');
   const [sortBy, setSortBy] = useState('newest');
+  
+  const { showToast } = useToast();
+  const [userFavorites, setUserFavorites] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (user) {
+      fetchUserFavorites();
+    } else {
+      setUserFavorites(new Set());
+    }
+  }, [user]);
+
+  const fetchUserFavorites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('favorite_listings')
+        .select('listing_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      const favSet = new Set((data || []).map((item: any) => item.listing_id));
+      setUserFavorites(favSet);
+    } catch (error) {
+      console.error('Error fetching user favorites:', error);
+    }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent, listingId: string) => {
+    e.stopPropagation();
+    if (!user) {
+      showToast('Vui lòng đăng nhập để lưu tin yêu thích! 🔑', 'warning');
+      return;
+    }
+
+    const isFav = userFavorites.has(listingId);
+    try {
+      if (isFav) {
+        const { error } = await supabase
+          .from('favorite_listings')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('listing_id', listingId);
+
+        if (error) throw error;
+        setUserFavorites(prev => {
+          const next = new Set(prev);
+          next.delete(listingId);
+          return next;
+        });
+        showToast('Đã bỏ lưu tin này.', 'success');
+      } else {
+        const { error } = await supabase
+          .from('favorite_listings')
+          .insert({ user_id: user.id, listing_id: listingId });
+
+        if (error) throw error;
+        setUserFavorites(prev => {
+          const next = new Set(prev);
+          next.add(listingId);
+          return next;
+        });
+        showToast('Đã lưu bài viết vào tin yêu thích! ❤️', 'success');
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      showToast('Đã xảy ra lỗi, vui lòng thử lại.', 'error');
+    }
+  };
   
   const sortOptions = [
     { value: 'newest', label: 'Mới đăng nhất' },
@@ -268,8 +337,15 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
                         {new Date(item.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
                           <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-md">Mới</div>
                         )}
-                        <button className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur rounded-xl text-slate-400 hover:text-red-500 hover:scale-110 transition-all shadow-sm">
-                          <Heart className="w-4 h-4" />
+                        <button 
+                          onClick={(e) => handleToggleFavorite(e, item.id)}
+                          className={`absolute top-2 right-2 p-2 rounded-xl backdrop-blur transition-all shadow-sm ${
+                            userFavorites.has(item.id)
+                              ? 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
+                              : 'bg-white/90 text-slate-400 hover:text-rose-500 hover:scale-110'
+                          }`}
+                        >
+                          <Heart className={`w-4 h-4 ${userFavorites.has(item.id) ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>

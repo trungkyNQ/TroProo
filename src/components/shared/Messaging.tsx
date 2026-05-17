@@ -14,6 +14,7 @@ interface MessagingProps {
 
 const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) => {
   const [activeChat, setActiveChat] = useState<string | null>(initialActiveChat || null);
+  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
 
   useEffect(() => {
     if (initialActiveChat) {
@@ -34,6 +35,31 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Mark active chat messages as read
+  const markAsRead = async () => {
+    if (!activeChat || !user) return;
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('conversation_id', activeChat)
+        .neq('sender_id', user.id)
+        .is('read_at', null);
+
+      if (error) throw error;
+      setConversations(prev => prev.map(c => c.id === activeChat ? { ...c, unread: 0 } : c));
+    } catch (err) {
+      console.error('Lỗi khi đánh dấu tin nhắn đã đọc:', err);
+    }
+  };
+
+  // Trigger markAsRead when activeChat changes
+  useEffect(() => {
+    if (activeChat) {
+      markAsRead();
+    }
+  }, [activeChat, user]);
 
   // Fetch conversations
   useEffect(() => {
@@ -68,6 +94,37 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
             }
           }
 
+          // Fetch unread count for each conversation
+          const { data: unreadCounts } = await supabase
+            .from('messages')
+            .select('conversation_id')
+            .in('conversation_id', data.map((c: any) => c.id))
+            .is('read_at', null)
+            .neq('sender_id', user.id);
+
+          const unreadMap: Record<string, number> = {};
+          if (unreadCounts) {
+            unreadCounts.forEach((m: any) => {
+              unreadMap[m.conversation_id] = (unreadMap[m.conversation_id] || 0) + 1;
+            });
+          }
+
+          // Fetch latest message for each conversation
+          const { data: latestMessages } = await supabase
+            .from('messages')
+            .select('conversation_id, content, created_at')
+            .in('conversation_id', data.map((c: any) => c.id))
+            .order('created_at', { ascending: false });
+
+          const latestMap: Record<string, any> = {};
+          if (latestMessages) {
+            latestMessages.forEach((m: any) => {
+              if (!latestMap[m.conversation_id]) {
+                latestMap[m.conversation_id] = m;
+              }
+            });
+          }
+
           setConversations(data.map((c: any) => {
             const targetId = c.landlord_id === user.id ? c.tenant_id : c.landlord_id;
             const userProfile = profileMap[targetId];
@@ -77,12 +134,12 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
               name: userProfile?.full_name || (role === 'landlord' ? 'Khách thuê' : 'Chủ phòng'),
               avatar: userProfile?.avatar_url,
               time: new Date(c.updated_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-              unread: 0,
+              unread: unreadMap[c.id] || 0,
               online: true,
-              lastMessage: 'Nhấn để xem tin nhắn...'
+              lastMessage: latestMap[c.id]?.content || 'Chưa có tin nhắn...'
             };
           }));
-          // 4. Nếu có initialActiveChat, ưu tiên nó. Nếu chưa có activeChat nào, chọn chat đầu tiên.
+          
           if (data.length > 0) {
             if (initialActiveChat) {
               setActiveChat(initialActiveChat);
@@ -98,7 +155,7 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
     fetchConversations();
   }, [user, role, initialActiveChat]);
 
-  // Fetch messages and subscribe
+  // Fetch messages and subscribe for activeChat
   useEffect(() => {
     if (!activeChat) return;
 
@@ -116,6 +173,11 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
           isMe: m.sender_id === user?.id,
           time: new Date(m.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
         })));
+
+        const hasUnread = data.some(m => !m.read_at && m.sender_id !== user?.id);
+        if (hasUnread) {
+          markAsRead();
+        }
       }
     };
     fetchMessages();
@@ -131,7 +193,6 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
       }, (payload) => {
         const newMsg = payload.new;
         setMessages(prev => {
-          // Tránh trùng lặp nếu tin nhắn đã được thêm qua Optimistic Update hoặc đã tồn tại
           if (prev.some(m => m.id === newMsg.id)) return prev;
           
           return [...prev, {
@@ -141,6 +202,10 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
             time: new Date(newMsg.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
           }];
         });
+
+        if (newMsg.sender_id !== user?.id) {
+          markAsRead();
+        }
       })
       .subscribe();
 
@@ -149,6 +214,44 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
     };
   }, [activeChat, user, role]);
 
+  // Global messages listener to update unread count and lastMessage in the side panel
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('chat-list-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, (payload) => {
+        const newMsg = payload.new;
+        setConversations(prev => {
+          const convIndex = prev.findIndex(c => c.id === newMsg.conversation_id);
+          if (convIndex === -1) return prev; 
+
+          const updated = [...prev];
+          const conv = { ...updated[convIndex] };
+          
+          conv.lastMessage = newMsg.content;
+          conv.time = new Date(newMsg.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          
+          if (newMsg.sender_id !== user.id && activeChat !== newMsg.conversation_id) {
+            conv.unread = (conv.unread || 0) + 1;
+          }
+
+          updated.splice(convIndex, 1);
+          updated.unshift(conv);
+          return updated;
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, activeChat]);
+
   const handleSendMessage = async (e?: React.FormEvent | React.KeyboardEvent) => {
     if (e) e.preventDefault();
     if (!newMessage.trim() || !activeChat || !user) return;
@@ -156,7 +259,6 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
     const content = newMessage.trim();
     setNewMessage('');
 
-    // 1. Tạo tin nhắn tạm thời (Optimistic Update) để hiển thị ngay lập tức
     const optimisticId = `temp-${Date.now()}`;
     const optimisticMsg = {
       id: optimisticId,
@@ -168,7 +270,6 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
 
     setMessages(prev => [...prev, optimisticMsg]);
 
-    // 2. Gửi dữ liệu thật lên Database
     const { data, error } = await supabase
       .from('messages')
       .insert({
@@ -181,13 +282,11 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
 
     if (error) {
       console.error('Lỗi khi gửi tin nhắn:', error);
-      // Xóa tin nhắn tạm nếu bị lỗi
       setMessages(prev => prev.filter(m => m.id !== optimisticId));
       return;
     }
 
     if (data) {
-      // 3. Thay thế tin nhắn tạm bằng tin nhắn thật từ DB
       setMessages(prev => prev.map(m => m.id === optimisticId ? {
         id: data.id,
         text: data.content,
@@ -195,7 +294,6 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
         time: new Date(data.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
       } : m));
 
-      // Cập nhật thời điểm tương tác mới nhất của hội thoại
       await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', activeChat);
     }
   };
@@ -231,16 +329,22 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
         </div>
 
         <div className="flex px-6 pt-2 gap-6 border-b border-slate-100 overflow-x-auto scrollbar-hide">
-          {['Tất cả', 'Chưa đọc'].map((tab, i) => (
-            <button 
-              key={tab}
-              className={`pb-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
-                i === 0 ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+          <button 
+            onClick={() => setActiveTab('all')}
+            className={`pb-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
+              activeTab === 'all' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            Tất cả
+          </button>
+          <button 
+            onClick={() => setActiveTab('unread')}
+            className={`pb-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
+              activeTab === 'unread' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            Chưa đọc
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -256,11 +360,11 @@ const Messaging: React.FC<MessagingProps> = ({ user, role, initialActiveChat }) 
                 </div>
               ))}
             </div>
-          ) : conversations.length === 0 ? (
+          ) : conversations.filter(conv => activeTab === 'all' || conv.unread > 0).length === 0 ? (
             <div className="p-6 text-center text-sm font-bold text-slate-400">
-              {role === 'landlord' ? 'Chưa có khách thuê nào liên hệ.' : 'Chưa có phòng nào được phản hồi.'}
+              {activeTab === 'unread' ? 'Không có tin nhắn chưa đọc.' : (role === 'landlord' ? 'Chưa có khách thuê nào liên hệ.' : 'Chưa có phòng nào được phản hồi.')}
             </div>
-          ) : conversations.map((conv) => (
+          ) : conversations.filter(conv => activeTab === 'all' || conv.unread > 0).map((conv) => (
             <div 
               key={conv.id}
               onClick={() => setActiveChat(conv.id)}

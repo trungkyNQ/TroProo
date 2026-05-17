@@ -109,9 +109,9 @@ const SELLER_ACTIONS: Record<string, { label: string; next: string; color: strin
   cancelled: null,
 };
 
-export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) => {
+export const MyStorePage = ({ onNavigate, user, onLogout, params }: MyStorePageProps) => {
   const [activeTab, setActiveTab] = useState<'store' | 'sales' | 'purchases'>(
-    (localStorage.getItem('last_store_tab') as any) || 'store'
+    params?.tab || (localStorage.getItem('last_store_tab') as any) || 'store'
   );
   const [products, setProducts] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
@@ -184,6 +184,12 @@ export const MyStorePage = ({ onNavigate, user, onLogout }: MyStorePageProps) =>
   useEffect(() => {
     localStorage.setItem('last_store_tab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (params?.tab) {
+      setActiveTab(params.tab);
+    }
+  }, [params?.tab]);
 
   // ── Seller: Update order status ─────────────────────────────
   const handleSellerUpdateStatus = async (orderId: string, newStatus: string) => {

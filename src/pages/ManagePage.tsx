@@ -225,6 +225,27 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
   const [loadingListings, setLoadingListings] = useState(true);
   const [loadingSupport, setLoadingSupport] = useState(true);
 
+  // Listen to navigation action triggers
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlAction = params.get('action');
+    if (urlAction === 'add-listing' || initialParams?.action === 'add-listing') {
+      setActiveTab('listings');
+      setListingForm({ 
+        title: '', description: '', price: '', area: '', type: 'Phòng trọ', 
+        location: '', street: '', image_url: '', 
+        electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' 
+      });
+      setEditingListingId(null);
+      setShowAddListingModal(true);
+
+      // Clear query params to prevent reopening modal on page refreshes
+      const url = new URL(window.location.href);
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [initialParams]);
+
   useEffect(() => {
     if (user) {
       setLoading(true); // Initial load still shows a quick pulse if needed, but we'll try to keep it light

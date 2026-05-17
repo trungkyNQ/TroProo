@@ -6,7 +6,7 @@
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
-import { Send, X, Home, User, Loader2, RefreshCw, Trash2, ChevronRight, ChevronLeft, Bell } from 'lucide-react';
+import { Send, X, Home, User, Loader2, RefreshCw, Trash2, ChevronRight, ChevronLeft, Bell, Phone } from 'lucide-react';
 import { useProBot, Message } from '../../hooks/useProBot';
 import { useListingNotifications } from '../../hooks/useListingNotifications';
 import { Listing } from '../../lib/supabase';
@@ -250,6 +250,24 @@ export default function ProBot({ onNavigate }: ProBotProps) {
 
   return (
     <>
+      {/* ── Hotline Phone Button ── */}
+      {!isOpen && (
+        <button
+          onClick={() => window.open('tel:0777745720')}
+          className="fixed bottom-[92px] right-6 w-14 h-14 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-full flex items-center justify-center shadow-2xl hover:from-emerald-600 hover:to-green-600 hover:scale-110 active:scale-95 transition-all duration-200 z-50 group"
+          aria-label="Gọi Hotline"
+        >
+          <Phone className="w-6 h-6 animate-pulse" />
+          <div className="absolute right-20 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+            <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[13px] font-bold px-4 py-2.5 rounded-2xl shadow-xl shadow-green-500/20 whitespace-nowrap border border-white/20 flex items-center gap-2">
+              <span>Gọi hotline: 0777.745.720</span>
+              <span className="text-base animate-bounce">📞</span>
+            </div>
+            <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-green-600 -ml-[1px]"></div>
+          </div>
+        </button>
+      )}
+
       {/* ── Floating Button ── */}
       <button
         id="probot-toggle"
@@ -275,9 +293,13 @@ export default function ProBot({ onNavigate }: ProBotProps) {
         )}
 
         {!isOpen && (
-          <span className="absolute right-16 bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            Chat với ProBot tìm phòng 🏠
-          </span>
+          <div className="absolute right-20 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+            <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 text-white text-[13px] font-bold px-4 py-2.5 rounded-2xl shadow-xl shadow-orange-500/20 whitespace-nowrap border border-white/20 flex items-center gap-2">
+              <span>Nhắn tin với ProBot để được tư vấn phòng trọ phù hợp bạn nhé!</span>
+              <span className="text-base animate-bounce">👋</span>
+            </div>
+            <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-amber-500 -ml-[1px]"></div>
+          </div>
         )}
       </button>
 
@@ -288,7 +310,7 @@ export default function ProBot({ onNavigate }: ProBotProps) {
             initial={{ opacity: 0, x: 20, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 20, scale: 0.9 }}
-            className="fixed bottom-24 right-6 w-72 bg-white rounded-2xl shadow-2xl border border-orange-100 p-3 z-40 cursor-pointer overflow-hidden group hover:border-orange-300 transition-colors"
+            className="fixed bottom-[160px] right-6 w-72 bg-white rounded-2xl shadow-2xl border border-orange-100 p-3 z-40 cursor-pointer overflow-hidden group hover:border-orange-300 transition-colors"
             onClick={() => {
               markAllRead();
               setIsOpen(false);

@@ -37,7 +37,7 @@ import {
   MessageCircle, Search, Users, Phone, Video, Info, ImageIcon, Smile, 
   Send, Mail, PhoneCall, Ban, Edit3, Settings,
   Maximize2, Layers, CheckCircle, Home, Zap, ShieldCheck, X, Menu,
-  BadgeCheck, Lock as LockIcon, Camera, Clock, Filter, ArrowUpDown, MoreVertical, Construction
+  BadgeCheck, Lock as LockIcon, Camera, Clock, Filter, ArrowUpDown, MoreVertical, Construction, Heart
 } from 'lucide-react';
 
 interface TenantPageProps {
@@ -123,6 +123,69 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
+
+  const fetchFavorites = async () => {
+    if (!user) return;
+    setLoadingFavorites(true);
+    try {
+      const { data, error } = await supabase
+        .from('favorite_listings')
+        .select(`
+          id,
+          listing_id,
+          listings:listings (
+            id,
+            title,
+            description,
+            price,
+            image_url,
+            images,
+            area,
+            location,
+            type,
+            street
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      const list = (data || [])
+        .map((item: any) => item.listings)
+        .filter(Boolean);
+      setFavorites(list);
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+    } finally {
+      setLoadingFavorites(false);
+    }
+  };
+
+  const handleRemoveFavorite = async (listingId: string) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('favorite_listings')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('listing_id', listingId);
+
+      if (error) throw error;
+      showToast('Đã bỏ lưu tin đăng.', 'success');
+      setFavorites(prev => prev.filter(item => item.id !== listingId));
+    } catch (err) {
+      console.error('Error removing favorite:', err);
+      showToast('Lỗi khi bỏ lưu tin.', 'error');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'favorites') {
+      fetchFavorites();
+    }
+  }, [activeTab, user]);
 
   useEffect(() => {
     if (user) {
@@ -497,6 +560,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     { id: 'invoices', label: 'Hóa đơn', icon: Wallet },
     { id: 'support', label: 'Hỗ trợ', icon: Wrench },
     { id: 'messages', label: 'Tin nhắn', icon: MessageSquare },
+    { id: 'favorites', label: 'Tin đã lưu', icon: Heart },
     { id: 'account', label: 'Tài khoản', icon: User },
   ];
 
@@ -748,6 +812,104 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
             />
           )}
 
+          {activeTab === 'favorites' && (
+            <div className="flex-1 flex flex-col gap-6">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 font-display flex items-center gap-2">
+                  <Heart className="w-7 h-7 text-rose-500 fill-rose-500" /> Tin đăng phòng trọ đã lưu
+                </h2>
+                <p className="text-sm text-slate-500 font-medium mt-1">Danh sách các phòng trọ bạn đã lưu để theo dõi và so sánh.</p>
+              </div>
+
+              {loadingFavorites ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="animate-pulse bg-white rounded-3xl p-4 border border-slate-100 space-y-4">
+                      <div className="w-full aspect-[4/3] bg-slate-200 rounded-2xl" />
+                      <div className="h-5 bg-slate-200 rounded w-3/4" />
+                      <div className="h-4 bg-slate-200 rounded w-1/2" />
+                      <div className="flex gap-2">
+                        <div className="h-10 bg-slate-200 rounded-xl flex-1" />
+                        <div className="h-10 bg-slate-200 rounded-xl flex-1" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : favorites.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white border border-slate-100 rounded-[32px] shadow-sm">
+                  <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 mb-4 animate-bounce">
+                    <Heart className="w-10 h-10 fill-current" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mb-2 font-display">Chưa có tin đăng nào được lưu</h3>
+                  <p className="text-slate-500 text-sm max-w-sm mb-6 font-medium">Bấm vào biểu tượng trái tim khi lướt xem phòng để lưu các tin đăng bạn yêu thích tại đây.</p>
+                  <button
+                    onClick={() => onNavigate('search')}
+                    className="bg-primary text-white text-xs font-black uppercase tracking-widest px-6 py-3.5 rounded-xl hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20"
+                  >
+                    Khám phá phòng trọ
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {favorites.map((listing) => (
+                    <motion.div
+                      key={listing.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-white border border-slate-100 rounded-[28px] overflow-hidden shadow-sm hover:shadow-xl hover:border-slate-200 transition-all duration-300 flex flex-col h-full"
+                    >
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 shrink-0">
+                        <img
+                          src={listing.image_url || (listing.images && listing.images[0]) || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800'}
+                          alt={listing.title}
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                          referrerPolicy="no-referrer"
+                        />
+                        <button
+                          onClick={() => handleRemoveFavorite(listing.id)}
+                          className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-rose-500 hover:bg-white shadow-md transition-all scale-95 hover:scale-105"
+                          title="Bỏ lưu"
+                        >
+                          <Heart className="w-4 h-4 fill-current" />
+                        </button>
+                      </div>
+                      <div className="p-5 flex flex-col flex-grow">
+                        <h4 className="font-black text-slate-900 text-base line-clamp-1 mb-2 hover:text-primary transition-colors cursor-pointer" onClick={() => onNavigate('listing-detail', { id: listing.id })}>
+                          {listing.title}
+                        </h4>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xs font-black text-rose-500 bg-rose-50 px-2.5 py-1 rounded-lg">
+                            {Number(listing.price).toLocaleString()}đ/tháng
+                          </span>
+                          <span className="text-xs font-black text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                            {listing.area || 20} m²
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4 flex-grow font-medium">
+                          {listing.description || 'Chưa có mô tả chi tiết cho phòng trọ này.'}
+                        </p>
+                        <div className="grid grid-cols-2 gap-3 mt-auto">
+                          <button
+                            onClick={() => onNavigate('listing-detail', { id: listing.id })}
+                            className="w-full py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-black uppercase tracking-wider transition-colors text-center"
+                          >
+                            Chi tiết
+                          </button>
+                          <button
+                            onClick={() => handleRemoveFavorite(listing.id)}
+                            className="w-full py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-black uppercase tracking-wider transition-colors text-center"
+                          >
+                            Bỏ lưu
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'account' && (
             <TenantAccountTab 
               user={user} 
@@ -769,7 +931,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
             />
           )}
 
-          {activeTab !== 'overview' && activeTab !== 'messages' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'account' && activeTab !== 'invoices' && activeTab !== 'support' && (
+          {activeTab !== 'overview' && activeTab !== 'messages' && activeTab !== 'rooms' && activeTab !== 'contracts' && activeTab !== 'account' && activeTab !== 'invoices' && activeTab !== 'support' && activeTab !== 'favorites' && (
             <div className="flex flex-col items-center justify-center h-96 text-slate-400">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-300" />
               <h3 className="text-lg font-bold text-slate-900 mb-2">Tính năng đang phát triển</h3>

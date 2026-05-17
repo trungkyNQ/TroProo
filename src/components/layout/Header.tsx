@@ -1,8 +1,9 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, User, LogOut, Menu, X } from 'lucide-react';
+import { Home, User, LogOut, Menu, X, Heart, MessageSquare, Plus, ShoppingBag, Phone, LayoutDashboard, Bed, Shield } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { NotificationBell } from '../shared/NotificationBell';
+import { supabase } from '../../lib/supabase';
 
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,6 +21,98 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
   const { role: currentRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadMessagesCount(0);
+      return;
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        const { data: convs, error: convError } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`);
+
+        if (convError) throw convError;
+        if (!convs || convs.length === 0) {
+          setUnreadMessagesCount(0);
+          return;
+        }
+
+        const convIds = convs.map((c: any) => c.id);
+
+        const { count, error: msgError } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .in('conversation_id', convIds)
+          .is('read_at', null)
+          .neq('sender_id', user.id);
+
+        if (msgError) throw msgError;
+        setUnreadMessagesCount(count || 0);
+      } catch (err) {
+        console.error('Error fetching unread message count:', err);
+      }
+    };
+
+    fetchUnreadCount();
+
+    const channel = supabase
+      .channel('header-unread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        async (payload) => {
+          const newMsg = payload.new;
+          if (newMsg && newMsg.sender_id !== user.id) {
+            const { data } = await supabase
+              .from('conversations')
+              .select('id')
+              .eq('id', newMsg.conversation_id)
+              .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`)
+              .maybeSingle();
+
+            if (data) {
+              setUnreadMessagesCount((prev) => prev + 1);
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const handleNavigateToMessages = () => {
+    if (currentRole === 'landlord') {
+      onNavigate('manage', { tab: 'messages' });
+    } else if (currentRole === 'admin') {
+      onNavigate('admin', { tab: 'messages' });
+    } else {
+      onNavigate('tenant', { tab: 'messages' });
+    }
+  };
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-10 py-3">
@@ -33,51 +126,57 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
             </div>
             <nav className="hidden md:flex items-center gap-8">
               <a 
-                className={`text-sm ${activePath === 'home' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
+                className={`flex items-center gap-1.5 text-sm ${activePath === 'home' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
                 href="#" 
                 onClick={(e) => { e.preventDefault(); onNavigate('home'); }}
               >
-                Trang chủ
+                <Home className="w-4 h-4" />
+                <span>Trang chủ</span>
               </a>
               <a 
-                className={`text-sm ${activePath === 'store' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
+                className={`flex items-center gap-1.5 text-sm ${activePath === 'store' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
                 href="#" 
                 onClick={(e) => { e.preventDefault(); onNavigate('store'); }}
               >
-                Cửa hàng
+                <ShoppingBag className="w-4 h-4" />
+                <span>Cửa hàng</span>
               </a>
               <a 
-                className={`text-sm ${activePath === 'contact' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
+                className={`flex items-center gap-1.5 text-sm ${activePath === 'contact' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
                 href="#" 
                 onClick={(e) => { e.preventDefault(); onNavigate('contact'); }}
               >
-                Liên hệ
+                <Phone className="w-4 h-4" />
+                <span>Liên hệ</span>
               </a>
               {currentRole === 'landlord' && (
                 <a 
-                  className={`text-sm ${activePath === 'manage' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
+                  className={`flex items-center gap-1.5 text-sm ${activePath === 'manage' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
                   href="#"
                   onClick={(e) => { e.preventDefault(); onNavigate('manage'); }}
                 >
-                  Quản lý
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Quản lý</span>
                 </a>
               )}
               {currentRole === 'tenant' && (
                 <a 
-                  className={`text-sm ${activePath === 'tenant' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
+                  className={`flex items-center gap-1.5 text-sm ${activePath === 'tenant' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
                   href="#"
                   onClick={(e) => { e.preventDefault(); onNavigate('tenant'); }}
                 >
-                  Phòng của tôi
+                  <Bed className="w-4 h-4" />
+                  <span>Phòng của tôi</span>
                 </a>
               )}
               {currentRole === 'admin' && (
                 <a 
-                  className={`text-sm ${activePath === 'admin' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
+                  className={`flex items-center gap-1.5 text-sm ${activePath === 'admin' ? 'font-bold text-primary border-b-2 border-primary pb-1' : 'font-semibold text-slate-600 hover:text-primary transition-colors'}`} 
                   href="#"
                   onClick={(e) => { e.preventDefault(); onNavigate('admin'); }}
                 >
-                  Quản trị
+                  <Shield className="w-4 h-4" />
+                  <span>Quản trị</span>
                 </a>
               )}
             </nav>
@@ -92,6 +191,42 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
           <div className="flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-2 md:gap-4 ml-2">
+                {currentRole === 'landlord' && (
+                  <button
+                    onClick={() => onNavigate('manage', { tab: 'listings', action: 'add-listing' })}
+                    className="h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-orange-600 hover:to-orange-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all duration-200 border border-orange-400/20 shrink-0"
+                    title="Đăng bài phòng mới"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden md:inline">Đăng bài</span>
+                  </button>
+                )}
+                {currentRole === 'tenant' && (
+                  <button
+                    onClick={() => onNavigate('tenant', { tab: 'favorites' })}
+                    className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all border border-slate-100 hover:scale-105 shadow-sm shrink-0"
+                    title="Tin đăng đã lưu"
+                  >
+                    <Heart className="w-4 h-4 fill-current" />
+                  </button>
+                )}
+                <button
+                  onClick={handleNavigateToMessages}
+                  className="relative w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-100 hover:scale-105 shadow-sm shrink-0"
+                  title="Tin nhắn"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  {unreadMessagesCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [1, 1.15, 1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center px-1 text-[8px] font-black text-white"
+                    >
+                      {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                    </motion.span>
+                  )}
+                </button>
                 <NotificationBell user={user} onNavigate={onNavigate} />
                 <div className="flex items-center gap-2 cursor-pointer group" onClick={() => {
                   if (currentRole === 'tenant') onNavigate('tenant');
@@ -170,53 +305,68 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
               {/* Navigation Links */}
               <nav className="flex flex-col gap-4 flex-grow overflow-y-auto pr-1">
                 <a 
-                  className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'home' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'home' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
                   href="#" 
                   onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); onNavigate('home'); }}
                 >
-                  Trang chủ
+                  <Home className="w-5 h-5" />
+                  <span>Trang chủ</span>
                 </a>
                 <a 
-                  className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'store' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'store' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
                   href="#" 
                   onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); onNavigate('store'); }}
                 >
-                  Cửa hàng
+                  <ShoppingBag className="w-5 h-5" />
+                  <span>Cửa hàng</span>
                 </a>
                 <a 
-                  className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'contact' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'contact' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
                   href="#" 
                   onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); onNavigate('contact'); }}
                 >
-                  Liên hệ
+                  <Phone className="w-5 h-5" />
+                  <span>Liên hệ</span>
                 </a>
                 
                 {/* Role specific links in mobile menu */}
                 {currentRole === 'landlord' && (
-                  <a 
-                    className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'manage' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); onNavigate('manage'); }}
-                  >
-                    Quản lý Chủ trọ
-                  </a>
+                  <>
+                    <button 
+                      onClick={() => { setIsMobileMenuOpen(false); onNavigate('manage', { tab: 'listings', action: 'add-listing' }); }}
+                      className="mx-4 my-2 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-orange-600 hover:to-orange-500 text-white font-bold text-sm transition-all text-center flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Đăng bài phòng mới</span>
+                    </button>
+                    <a 
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'manage' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); onNavigate('manage'); }}
+                    >
+                      <LayoutDashboard className="w-5 h-5" />
+                      <span>Quản lý Chủ trọ</span>
+                    </a>
+                  </>
                 )}
                 {currentRole === 'tenant' && (
                   <a 
-                    className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'tenant' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'tenant' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
                     href="#"
                     onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); onNavigate('tenant'); }}
                   >
-                    Phòng của tôi
+                    <Bed className="w-5 h-5" />
+                    <span>Phòng của tôi</span>
                   </a>
                 )}
                 {currentRole === 'admin' && (
                   <a 
-                    className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'admin' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activePath === 'admin' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} 
                     href="#"
                     onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); onNavigate('admin'); }}
                   >
-                    Quản trị Hệ thống
+                    <Shield className="w-5 h-5" />
+                    <span>Quản trị Hệ thống</span>
                   </a>
                 )}
               </nav>
