@@ -185,7 +185,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
     if (activeTab === 'favorites') {
       fetchFavorites();
     }
-  }, [activeTab, user]);
+  }, [activeTab, user?.id]);
 
   useEffect(() => {
     if (user) {
@@ -195,7 +195,7 @@ export const TenantPage = ({ onNavigate, user, onLogout, initialParams }: Tenant
       fetchProfile();
       fetchTenantInvoices();
     }
-  }, [user]);
+  }, [user?.id]);
 
   const fetchTenantInvoices = async () => {
     if (!user) return;

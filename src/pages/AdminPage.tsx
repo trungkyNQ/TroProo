@@ -78,6 +78,17 @@ interface Listing {
   approval_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   ownerInfo?: Profile;
+  pending_edit_data?: any;
+  edit_approval_status?: 'pending' | 'approved' | 'rejected' | null;
+  edit_rejection_reason?: string | null;
+  description?: string;
+  images?: string[];
+  area?: number;
+  street?: string;
+  electricity_price?: number;
+  water_price?: number;
+  service_fee?: number;
+  deposit?: number;
 }
 
 interface Product {
@@ -274,7 +285,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     if (user) {
       fetchAllData();
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Sync tab with URL and LocalStorage
   useEffect(() => {
@@ -512,6 +523,90 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     }
   };
 
+  const handleApproveListingEdit = async (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Duyệt cập nhật chỉnh sửa',
+      message: 'Bạn có chắc chắn muốn duyệt và áp dụng các thông tin chỉnh sửa mới cho tin đăng này?',
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          setActionLoading(id);
+          const listing = listings.find(l => l.id === id);
+          if (!listing) throw new Error("Không tìm thấy tin đăng.");
+          const newFields = listing.pending_edit_data;
+          if (!newFields) throw new Error("Không tìm thấy dữ liệu chỉnh sửa.");
+
+          const { error } = await supabase
+            .from('listings')
+            .update({
+              ...newFields,
+              pending_edit_data: null,
+              edit_approval_status: 'approved',
+              edit_rejection_reason: null
+            })
+            .eq('id', id);
+
+          if (error) throw error;
+
+          // Gửi thông báo cho chủ trọ
+          await supabase.from('notifications').insert({
+            sender_id: user?.id,
+            receiver_id: listing.owner_id,
+            type: 'success',
+            title: 'Yêu cầu chỉnh sửa được duyệt!',
+            message: `Nội dung thay đổi cho bài đăng "${newFields.title || listing.title}" đã được Admin phê duyệt và áp dụng trực tiếp!`,
+            related_entity_id: id
+          });
+
+          showToast('Đã duyệt và áp dụng nội dung chỉnh sửa thành công!', 'success');
+          await fetchListings();
+        } catch (error: any) {
+          console.error("Error approving listing edit:", error);
+          showToast(error.message || 'Lỗi khi duyệt chỉnh sửa.', 'error');
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
+  const handleRejectListingEdit = async (id: string, reason: string) => {
+    try {
+      setActionLoading(id);
+      const listing = listings.find(l => l.id === id);
+      if (!listing) throw new Error("Không tìm thấy tin đăng.");
+
+      const { error } = await supabase
+        .from('listings')
+        .update({
+          edit_approval_status: 'rejected',
+          edit_rejection_reason: reason
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Gửi thông báo cho chủ trọ
+      await supabase.from('notifications').insert({
+        sender_id: user?.id,
+        receiver_id: listing.owner_id,
+        type: 'error',
+        title: 'Yêu cầu chỉnh sửa bị từ chối',
+        message: `Yêu cầu chỉnh sửa bài đăng "${listing.title}" đã bị từ chối. Lý do: ${reason}.`,
+        related_entity_id: id
+      });
+
+      showToast('Đã từ chối các thay đổi chỉnh sửa.', 'success');
+      await fetchListings();
+    } catch (error: any) {
+      console.error("Error rejecting listing edit:", error);
+      showToast(error.message || 'Lỗi khi từ chối chỉnh sửa.', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const executeProductApproval = async (id: string, status: 'approved' | 'rejected', reason?: string) => {
     try {
       setActionLoading(id);
@@ -637,7 +732,7 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   };
 
   const listingStats = {
-    pending: listings.filter(l => l.approval_status === 'pending').length,
+    pending: listings.filter(l => l.approval_status === 'pending' || l.edit_approval_status === 'pending').length,
     approved: listings.filter(l => l.approval_status === 'approved').length,
     rejected: listings.filter(l => l.approval_status === 'rejected').length,
     totalProducts: products.length,
@@ -649,7 +744,12 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     productRejected: products.filter(p => p.approval_status === 'rejected').length,
   };
 
-  const currentListings = listings.filter(l => l.approval_status === activeTab);
+  const currentListings = listings.filter(l => {
+    if (activeTab === 'pending') {
+      return l.approval_status === 'pending' || l.edit_approval_status === 'pending';
+    }
+    return l.approval_status === activeTab;
+  });
   const currentProducts = products.filter(p => p.approval_status === activeTab);
 
   // ===================== USERS LOGIC =====================
@@ -1275,6 +1375,8 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
               editingProduct={editingProduct} setEditingProduct={setEditingProduct}
               productEditForm={productEditForm} setProductEditForm={setProductEditForm} handleSaveProductEdit={handleSaveProductEdit}
               setHighlightedListingId={setHighlightedListingId} onNavigate={onNavigate}
+              handleApproveListingEdit={handleApproveListingEdit}
+              handleRejectListingEdit={handleRejectListingEdit}
             />
           )}
 

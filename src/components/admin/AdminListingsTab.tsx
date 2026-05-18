@@ -37,6 +37,8 @@ interface AdminListingsTabProps {
   handleSaveProductEdit: () => void;
   setHighlightedListingId: (id: string | null) => void;
   onNavigate: (page: any) => void;
+  handleApproveListingEdit?: (id: string) => void;
+  handleRejectListingEdit?: (id: string, reason: string) => void;
 }
 
 export const AdminListingsTab = ({ 
@@ -46,12 +48,17 @@ export const AdminListingsTab = ({
   highlightedListingId, getInitials, formatDate, listingStats,
   editingListing, setEditingListing, editForm, setEditForm, handleSaveEdit,
   editingProduct, setEditingProduct, productEditForm, setProductEditForm, handleSaveProductEdit,
-  setHighlightedListingId, onNavigate
+  setHighlightedListingId, onNavigate, handleApproveListingEdit, handleRejectListingEdit
 }: AdminListingsTabProps) => {
   const [rejectModal, setRejectModal] = useState<{isOpen: boolean, id: string, type: 'room'|'product'} | null>(null);
   const [rejectReasonType, setRejectReasonType] = useState<string>('Bài đăng thiếu thông tin');
   const [customReason, setCustomReason] = useState<string>('');
   const [viewingItem, setViewingItem] = useState<any>(null);
+
+  const [compareItem, setCompareItem] = useState<any>(null);
+  const [rejectEditModal, setRejectEditModal] = useState<{isOpen: boolean, id: string} | null>(null);
+  const [rejectEditReasonType, setRejectEditReasonType] = useState<string>('Thông tin sửa đổi không chính xác');
+  const [customEditReason, setCustomEditReason] = useState<string>('');
 
   const handleConfirmReject = () => {
     if (!rejectModal) return;
@@ -242,39 +249,55 @@ export const AdminListingsTab = ({
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          listing.approval_status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 
-                          listing.approval_status === 'rejected' ? 'bg-red-100 text-red-600' : 
-                          'bg-orange-100 text-orange-600'
-                        }`}>
-                          {listing.approval_status === 'approved' ? 'Đã duyệt' : 
-                           listing.approval_status === 'rejected' ? 'Đã từ chối' : 'Chờ duyệt'}
-                        </span>
+                        {listing.edit_approval_status === 'pending' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400 border border-purple-200 dark:border-purple-900/30">
+                            📝 Chờ duyệt sửa
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            listing.approval_status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 
+                            listing.approval_status === 'rejected' ? 'bg-red-100 text-red-600' : 
+                            'bg-orange-100 text-orange-600'
+                          }`}>
+                            {listing.approval_status === 'approved' ? 'Đã duyệt' : 
+                             listing.approval_status === 'rejected' ? 'Đã từ chối' : 'Chờ duyệt'}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {listing.approval_status === 'pending' && (
+                        <div className="flex items-center justify-end gap-1.5">
+                          {listing.edit_approval_status === 'pending' ? (
+                            <button onClick={() => setCompareItem(listing)} 
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-600 dark:bg-purple-950/20 dark:text-purple-400 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-900/30 rounded-lg text-xs font-black uppercase tracking-wider transition-all" 
+                                    title="So sánh thay đổi">
+                              <Eye className="w-4 h-4" /> So sánh
+                            </button>
+                          ) : (
                             <>
-                              <button onClick={() => handleUpdateStatus(listing.id, 'approved')} 
-                                      className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Phê duyệt">
-                                <CheckCircle className="w-5 h-5" />
+                              {listing.approval_status === 'pending' && (
+                                <>
+                                  <button onClick={() => handleUpdateStatus(listing.id, 'approved')} 
+                                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-all" title="Phê duyệt">
+                                    <CheckCircle className="w-5 h-5" />
+                                  </button>
+                                  <button onClick={() => setRejectModal({ isOpen: true, id: listing.id, type: 'room' })} 
+                                          className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all" title="Từ chối">
+                                    <XCircle className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
+                              <button onClick={() => handleEditClick(listing)} 
+                                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chỉnh sửa">
+                                <Edit className="w-5 h-5" />
                               </button>
-                              <button onClick={() => setRejectModal({ isOpen: true, id: listing.id, type: 'room' })} 
-                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Từ chối">
-                                <XCircle className="w-5 h-5" />
+                              <button onClick={() => setViewingItem({ ...listing, _itemType: 'room' })} 
+                                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Xem chi tiết">
+                                <Eye className="w-5 h-5" />
                               </button>
                             </>
                           )}
-                          <button onClick={() => handleEditClick(listing)} 
-                                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chỉnh sửa">
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button onClick={() => setViewingItem({ ...listing, _itemType: 'room' })} 
-                                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Xem chi tiết">
-                            <Eye className="w-5 h-5" />
-                          </button>
                           <button onClick={() => handleDeleteListing(listing.id)} 
-                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa">
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all" title="Xóa">
                             <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
@@ -696,7 +719,6 @@ export const AdminListingsTab = ({
                   </div>
                 </div>
 
-                {/* Footer Actions */}
                 <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button onClick={() => setViewingItem(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Đóng lại</button>
@@ -727,6 +749,318 @@ export const AdminListingsTab = ({
                       </>
                     )}
                   </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* COMPARISON MODAL FOR PENDING EDITS */}
+        <AnimatePresence>
+          {compareItem && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" onClick={() => setCompareItem(null)}>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                          className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-5xl my-8 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 bg-purple-100 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 rounded-xl">
+                      <FileText className="w-5 h-5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">So sánh thay đổi chỉnh sửa</h3>
+                      <p className="text-xs text-slate-500 font-medium">Bấm phê duyệt để áp dụng các thay đổi mới lên trang chủ</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setCompareItem(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Comparison body */}
+                <div className="overflow-y-auto flex-1 p-6 space-y-6 custom-scrollbar">
+                  {/* Owner info */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center font-bold text-sm">
+                        {getInitials(compareItem.ownerInfo?.full_name)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">{compareItem.ownerInfo?.full_name || 'N/A'}</p>
+                        <p className="text-[11px] text-slate-500 font-medium">Số điện thoại: {compareItem.ownerInfo?.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Mã tin đăng</p>
+                      <p className="text-sm font-black text-slate-700 dark:text-slate-300">#{compareItem.id.substring(0, 8)}</p>
+                    </div>
+                  </div>
+
+                  {/* Grid Layout Side-by-Side */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* COLUMN LEFT: OLD INFO */}
+                    <div className="bg-slate-50/50 dark:bg-slate-800/10 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden">
+                      <div className="bg-slate-100 dark:bg-slate-800/80 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                        <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                          🔴 Dữ liệu hiện tại (Công khai)
+                        </span>
+                      </div>
+                      <div className="p-5 space-y-4 text-xs font-bold text-slate-600 dark:text-slate-300">
+                        {/* Image */}
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Ảnh đại diện</p>
+                          <div className="w-full aspect-video rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
+                            {compareItem.image_url ? (
+                              <img src={compareItem.image_url} alt="old" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300"><ImageIcon className="w-10 h-10" /></div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Details */}
+                        <div className="space-y-3">
+                          <div className={`p-3 rounded-xl border ${compareItem.title !== compareItem.pending_edit_data?.title ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                            <p className="text-[10px] text-slate-400 uppercase mb-1">Tiêu đề tin đăng</p>
+                            <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.title !== compareItem.pending_edit_data?.title ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.title}</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.price !== compareItem.pending_edit_data?.price ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Giá thuê / tháng</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.price !== compareItem.pending_edit_data?.price ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.price.toLocaleString('vi-VN')} đ</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.area !== compareItem.pending_edit_data?.area ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Diện tích</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.area !== compareItem.pending_edit_data?.area ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.area || 'N/A'} m²</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.type !== compareItem.pending_edit_data?.type ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Loại phòng</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.type !== compareItem.pending_edit_data?.type ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.type}</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.location !== compareItem.pending_edit_data?.location ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Vị trí (Quận)</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.location !== compareItem.pending_edit_data?.location ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.location || 'N/A'}</p>
+                            </div>
+                          </div>
+
+                          <div className={`p-3 rounded-xl border ${compareItem.street !== compareItem.pending_edit_data?.street ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                            <p className="text-[10px] text-slate-400 uppercase mb-1">Đường / Số nhà</p>
+                            <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.street !== compareItem.pending_edit_data?.street ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.street || 'N/A'}</p>
+                          </div>
+
+                          {/* Utilities */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.electricity_price !== compareItem.pending_edit_data?.electricity_price ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Giá điện / kwh</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.electricity_price !== compareItem.pending_edit_data?.electricity_price ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.electricity_price?.toLocaleString('vi-VN') || 3500} đ</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.water_price !== compareItem.pending_edit_data?.water_price ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Giá nước / m³</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.water_price !== compareItem.pending_edit_data?.water_price ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.water_price?.toLocaleString('vi-VN') || 20000} đ</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.service_fee !== compareItem.pending_edit_data?.service_fee ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Phí dịch vụ / phòng</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.service_fee !== compareItem.pending_edit_data?.service_fee ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.service_fee?.toLocaleString('vi-VN') || 150000} đ</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.deposit !== compareItem.pending_edit_data?.deposit ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Tiền đặt cọc</p>
+                              <p className={`text-sm font-black text-slate-900 dark:text-white ${compareItem.deposit !== compareItem.pending_edit_data?.deposit ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.deposit?.toLocaleString('vi-VN') || 0} đ</p>
+                            </div>
+                          </div>
+
+                          <div className={`p-3 rounded-xl border ${compareItem.description !== compareItem.pending_edit_data?.description ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                            <p className="text-[10px] text-slate-400 uppercase mb-1">Mô tả phòng</p>
+                            <p className={`text-xs leading-relaxed ${compareItem.description !== compareItem.pending_edit_data?.description ? 'line-through text-rose-700 dark:text-rose-400' : ''}`}>{compareItem.description || 'Không có mô tả'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* COLUMN RIGHT: PROPOSED NEW INFO */}
+                    <div className="bg-slate-50/50 dark:bg-slate-800/10 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden">
+                      <div className="bg-slate-100 dark:bg-slate-800/80 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                          🟢 Dữ liệu mới đề xuất (Chờ duyệt)
+                        </span>
+                        <span className="bg-purple-100 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">Mới</span>
+                      </div>
+                      <div className="p-5 space-y-4 text-xs font-bold text-slate-600 dark:text-slate-300">
+                        {/* Image */}
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Ảnh đại diện</p>
+                          <div className="w-full aspect-video rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
+                            {compareItem.pending_edit_data?.image_url ? (
+                              <img src={compareItem.pending_edit_data.image_url} alt="new" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300"><ImageIcon className="w-10 h-10" /></div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Details */}
+                        <div className="space-y-3">
+                          <div className={`p-3 rounded-xl border ${compareItem.title !== compareItem.pending_edit_data?.title ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                            <p className="text-[10px] text-slate-400 uppercase mb-1">Tiêu đề tin đăng</p>
+                            <p className={`text-sm font-black ${compareItem.title !== compareItem.pending_edit_data?.title ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.title}</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.price !== compareItem.pending_edit_data?.price ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Giá thuê / tháng</p>
+                              <p className={`text-sm font-black ${compareItem.price !== compareItem.pending_edit_data?.price ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.price?.toLocaleString('vi-VN')} đ</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.area !== compareItem.pending_edit_data?.area ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Diện tích</p>
+                              <p className={`text-sm font-black ${compareItem.area !== compareItem.pending_edit_data?.area ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.area || 'N/A'} m²</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.type !== compareItem.pending_edit_data?.type ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Loại phòng</p>
+                              <p className={`text-sm font-black ${compareItem.type !== compareItem.pending_edit_data?.type ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.type}</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.location !== compareItem.pending_edit_data?.location ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Vị trí (Quận)</p>
+                              <p className={`text-sm font-black ${compareItem.location !== compareItem.pending_edit_data?.location ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.location || 'N/A'}</p>
+                            </div>
+                          </div>
+
+                          <div className={`p-3 rounded-xl border ${compareItem.street !== compareItem.pending_edit_data?.street ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                            <p className="text-[10px] text-slate-400 uppercase mb-1">Đường / Số nhà</p>
+                            <p className={`text-sm font-black ${compareItem.street !== compareItem.pending_edit_data?.street ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.street || 'N/A'}</p>
+                          </div>
+
+                          {/* Utilities */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.electricity_price !== compareItem.pending_edit_data?.electricity_price ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Giá điện / kwh</p>
+                              <p className={`text-sm font-black ${compareItem.electricity_price !== compareItem.pending_edit_data?.electricity_price ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.electricity_price?.toLocaleString('vi-VN') || 3500} đ</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.water_price !== compareItem.pending_edit_data?.water_price ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Giá nước / m³</p>
+                              <p className={`text-sm font-black ${compareItem.water_price !== compareItem.pending_edit_data?.water_price ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.water_price?.toLocaleString('vi-VN') || 20000} đ</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`p-3 rounded-xl border ${compareItem.service_fee !== compareItem.pending_edit_data?.service_fee ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Phí dịch vụ / phòng</p>
+                              <p className={`text-sm font-black ${compareItem.service_fee !== compareItem.pending_edit_data?.service_fee ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.service_fee?.toLocaleString('vi-VN') || 150000} đ</p>
+                            </div>
+                            <div className={`p-3 rounded-xl border ${compareItem.deposit !== compareItem.pending_edit_data?.deposit ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                              <p className="text-[10px] text-slate-400 uppercase mb-1">Tiền đặt cọc</p>
+                              <p className={`text-sm font-black ${compareItem.deposit !== compareItem.pending_edit_data?.deposit ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.deposit?.toLocaleString('vi-VN') || 0} đ</p>
+                            </div>
+                          </div>
+
+                          <div className={`p-3 rounded-xl border ${compareItem.description !== compareItem.pending_edit_data?.description ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                            <p className="text-[10px] text-slate-400 uppercase mb-1">Mô tả phòng</p>
+                            <p className={`text-xs leading-relaxed ${compareItem.description !== compareItem.pending_edit_data?.description ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-900 dark:text-white'}`}>{compareItem.pending_edit_data?.description || 'Không có mô tả'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer actions */}
+                <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                  <button onClick={() => setCompareItem(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-850 rounded-xl transition-colors">Đóng</button>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => {
+                        setRejectEditModal({ isOpen: true, id: compareItem.id });
+                        setCompareItem(null);
+                      }}
+                      className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 rounded-xl text-sm font-black flex items-center gap-2 uppercase tracking-tight"
+                    >
+                      <XCircle className="w-4 h-4" /> Từ chối chỉnh sửa
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (handleApproveListingEdit) {
+                          handleApproveListingEdit(compareItem.id);
+                        }
+                        setCompareItem(null);
+                      }}
+                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-black shadow-lg shadow-emerald-600/20 flex items-center gap-2 uppercase tracking-tight"
+                    >
+                      <CheckCircle className="w-4 h-4" /> Phê duyệt & Áp dụng
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* MODAL TỪ CHỐI CHỈNH SỬA */}
+        <AnimatePresence>
+          {rejectEditModal && (
+            <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                          className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                  <h2 className="text-xl font-bold flex items-center gap-3">
+                    <span className="p-1.5 bg-red-100 dark:bg-red-950/30 text-red-600 rounded-lg"><XCircle className="w-5 h-5" /></span>
+                    <span className="text-slate-900 dark:text-white">Từ chối chỉnh sửa</span>
+                  </h2>
+                  <button onClick={() => setRejectEditModal(null)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Lý do từ chối chỉnh sửa:</label>
+                    <select 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all"
+                      value={rejectEditReasonType}
+                      onChange={(e) => setRejectEditReasonType(e.target.value)}
+                    >
+                      <option value="Thông tin sửa đổi không chính xác">Thông tin sửa đổi không chính xác</option>
+                      <option value="Hình ảnh không phù hợp hoặc mờ">Hình ảnh không phù hợp hoặc mờ</option>
+                      <option value="Thay đổi giá thuê quá cao đột biến">Thay đổi giá thuê quá cao đột biến</option>
+                      <option value="Lí do khác">Lí do khác...</option>
+                    </select>
+                  </div>
+                  
+                  {rejectEditReasonType === 'Lí do khác' && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 mt-4">Nhập lý do chi tiết:</label>
+                      <textarea 
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all min-h-[100px] resize-none"
+                        placeholder="Nhập lý do từ chối chỉnh sửa..."
+                        value={customEditReason}
+                        onChange={(e) => setCustomEditReason(e.target.value)}
+                      ></textarea>
+                    </motion.div>
+                  )}
+                  <p className="text-xs text-slate-500 font-medium mt-2">
+                    Lý do từ chối sẽ được gửi trực tiếp đến Chủ trọ để cập nhật lại tin đăng.
+                  </p>
+                </div>
+                <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                  <button onClick={() => setRejectEditModal(null)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-850 rounded-xl transition-colors">Hủy</button>
+                  <button 
+                    onClick={() => {
+                      const finalReason = rejectEditReasonType === 'Lí do khác' ? customEditReason : rejectEditReasonType;
+                      if (handleRejectListingEdit && rejectEditModal) {
+                        handleRejectListingEdit(rejectEditModal.id, finalReason);
+                      }
+                      setRejectEditModal(null);
+                      setCustomEditReason('');
+                    }} 
+                    disabled={rejectEditReasonType === 'Lí do khác' && !customEditReason.trim()}
+                    className="px-6 py-2.5 text-sm font-bold bg-red-600 text-white hover:bg-red-700 rounded-xl shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Xác nhận từ chối
+                  </button>
                 </div>
               </motion.div>
             </div>

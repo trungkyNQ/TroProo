@@ -24,6 +24,7 @@ interface AddListingModalProps {
   setForm: React.Dispatch<React.SetStateAction<ListingForm>>;
   onSubmit: () => void;
   loading: boolean;
+  isEditing?: boolean;
 }
 
 export const AddListingModal = ({ 
@@ -32,7 +33,8 @@ export const AddListingModal = ({
   form, 
   setForm, 
   onSubmit, 
-  loading 
+  loading,
+  isEditing = false
 }: AddListingModalProps) => {
   return (
     <AnimatePresence>
@@ -54,8 +56,12 @@ export const AddListingModal = ({
             {/* Header */}
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
-                <h3 className="text-xl font-black text-slate-900 font-display">Tạo bài đăng mới</h3>
-                <p className="text-xs font-bold text-slate-400 mt-1">Bài đăng chỉ để quảng cáo, không tự tạo phòng quản lý</p>
+                <h3 className="text-xl font-black text-slate-900 font-display">
+                  {isEditing ? 'Chỉnh sửa bài đăng' : 'Tạo bài đăng mới'}
+                </h3>
+                <p className="text-xs font-bold text-slate-400 mt-1">
+                  {isEditing ? 'Cập nhật thông tin quảng cáo cho bài đăng của bạn' : 'Bài đăng chỉ để quảng cáo, không tự tạo phòng quản lý'}
+                </p>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-rose-50 rounded-xl transition-colors text-slate-400 hover:text-rose-500"><X className="w-5 h-5" /></button>
             </div>
@@ -165,7 +171,7 @@ export const AddListingModal = ({
             <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-4">
               <button onClick={onClose} className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all bg-slate-200 text-slate-500 hover:bg-slate-300">Hủy</button>
               <button onClick={onSubmit} disabled={loading || !form.title || !form.price} className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-hover shadow-lg shadow-orange-100 flex justify-center items-center gap-2">
-                {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Đăng bài'}
+                {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : (isEditing ? 'Lưu thay đổi' : 'Đăng bài')}
               </button>
             </div>
           </motion.div>

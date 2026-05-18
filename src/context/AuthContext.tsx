@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [dbRole, setDbRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const sessionRef = useRef<Session | null>(null);
 
   useEffect(() => {
     const fetchRole = async (userId?: string) => {
@@ -38,19 +39,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      fetchRole(session?.user?.id);
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      setSession(initialSession);
+      sessionRef.current = initialSession;
+      fetchRole(initialSession?.user?.id);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      if (event === 'SIGNED_IN') {
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      // Determine if this is a genuine new sign-in transition
+      // (going from no-session to active-session)
+      const isNewLogin = event === 'SIGNED_IN' && !sessionRef.current;
+
+      console.log('[AuthContext] onAuthStateChange event:', event, 'isNewLogin:', isNewLogin, 'hasCurrentSession:', !!currentSession, 'hasSessionRef:', !!sessionRef.current);
+
+      setSession(currentSession);
+      sessionRef.current = currentSession;
+
+      if (isNewLogin) {
         setLoading(true);
       }
-      fetchRole(session?.user?.id);
+      fetchRole(currentSession?.user?.id);
     });
 
     return () => subscription.unsubscribe();

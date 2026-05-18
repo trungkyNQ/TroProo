@@ -51,7 +51,7 @@ export const SearchPage = ({ onNavigate, user, onLogout, initialParams }: Search
     } else {
       setUserFavorites(new Set());
     }
-  }, [user]);
+  }, [user?.id]);
 
   const fetchUserFavorites = async () => {
     try {

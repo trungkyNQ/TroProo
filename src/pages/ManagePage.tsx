@@ -270,11 +270,13 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         fetchSupportRequests()
       ]).finally(() => setLoading(false));
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Cleanup modals when unmounting
   useEffect(() => {
+    console.log('[ManagePage] Component MOUNTED');
     return () => {
+      console.log('[ManagePage] Component UNMOUNTING! Resetting modal states...');
       setShowAddListingModal(false);
       setShowAddRoomModal(false);
       setShowEditRoomModal(false);
@@ -591,11 +593,44 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       };
 
       if (editingListingId) {
-        const { error } = await supabase.from('listings').update(payload).eq('id', editingListingId);
-        if (error) throw error;
+        const currentListing = listingsData.find(x => x.id === editingListingId);
+        
+        if (currentListing && currentListing.approval_status === 'approved') {
+          const editPayload = {
+            title: listingForm.title,
+            description: listingForm.description || null,
+            price: Number(listingForm.price),
+            area: listingForm.area ? Number(listingForm.area) : null,
+            type: listingForm.type,
+            location: listingForm.location || null,
+            street: listingForm.street || null,
+            image_url: listingForm.image_url || null,
+            images: listingForm.image_url ? [listingForm.image_url] : [],
+            electricity_price: Number(listingForm.electricity_price) || 3500,
+            water_price: Number(listingForm.water_price) || 20000,
+            service_fee: Number(listingForm.service_fee) || 150000,
+            deposit: listingForm.deposit ? Number(listingForm.deposit) : Number(listingForm.price),
+          };
+
+          const { error } = await supabase
+            .from('listings')
+            .update({
+              pending_edit_data: editPayload,
+              edit_approval_status: 'pending',
+              edit_rejection_reason: null
+            })
+            .eq('id', editingListingId);
+          if (error) throw error;
+          showToast('Đã gửi yêu cầu chỉnh sửa bài viết để Admin duyệt.', 'success');
+        } else {
+          const { error } = await supabase.from('listings').update(payload).eq('id', editingListingId);
+          if (error) throw error;
+          showToast('Cập nhật bài viết thành công.', 'success');
+        }
       } else {
         const { error } = await supabase.from('listings').insert(payload);
         if (error) throw error;
+        showToast('Đã đăng bài thành công, chờ Admin duyệt.', 'success');
       }
 
       setShowAddListingModal(false);
@@ -1238,11 +1273,16 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       />
       <AddListingModal
         show={showAddListingModal}
-        onClose={() => setShowAddListingModal(false)}
+        onClose={() => {
+          setShowAddListingModal(false);
+          setEditingListingId(null);
+          setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' });
+        }}
         form={listingForm}
         setForm={setListingForm}
         onSubmit={handleAddListing}
         loading={addingListing}
+        isEditing={!!editingListingId}
       />
       <DeleteConfirmModal
         show={showDeleteConfirmModal}

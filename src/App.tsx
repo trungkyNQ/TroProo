@@ -48,6 +48,13 @@ const LegacyPageWrapper = ({ Component, requireAuth, allowedRoles }: { Component
   const navigate = useNavigate();
   const { showToast } = useToast();
   const location = useLocation();
+  const hasLoadedOnce = React.useRef(false);
+
+  // Keep track of whether we have successfully authorized once
+  const isAuthorized = !loading && (!requireAuth || user) && (!allowedRoles || (role && allowedRoles.includes(role)));
+  if (isAuthorized) {
+    hasLoadedOnce.current = true;
+  }
 
   const handleNavigate = (page: string, navParams?: any) => {
     let url = page === 'home' ? '/' : `/${page}`;
@@ -80,15 +87,18 @@ const LegacyPageWrapper = ({ Component, requireAuth, allowedRoles }: { Component
   }
 
   useEffect(() => {
+    console.log('[LegacyPageWrapper] useEffect triggered. path:', location.pathname, 'loading:', loading, 'user:', !!user, 'role:', role);
     if (!loading) {
       if (requireAuth && !user) {
         // Only navigate and show toast if we're not already heading to login
         if (location.pathname !== '/login') {
+          console.log('[LegacyPageWrapper] Redirecting to /login - not authenticated');
           navigate('/login', { replace: true });
           showToast('Vui lòng đăng nhập để tiếp tục', 'warning');
         }
       } else if (allowedRoles && role && !allowedRoles.includes(role)) {
         if (location.pathname !== '/') {
+          console.log('[LegacyPageWrapper] Redirecting to / - role mismatch. Allowed:', allowedRoles, 'Actual:', role);
           navigate('/', { replace: true });
           showToast('Bạn không có quyền truy cập trang này', 'error');
         }
@@ -96,12 +106,14 @@ const LegacyPageWrapper = ({ Component, requireAuth, allowedRoles }: { Component
     }
   }, [loading, user, role, requireAuth, allowedRoles, navigate, showToast, location.pathname]);
 
-  if (loading || (requireAuth && !user)) {
+  if ((loading || (requireAuth && !user)) && !hasLoadedOnce.current) {
+    console.log('[LegacyPageWrapper] Rendering LOADING placeholder screen. loading:', loading, 'user:', !!user);
     return (
       <div className="min-h-screen bg-slate-50"></div>
     );
   }
 
+  console.log('[LegacyPageWrapper] Rendering actual Component. path:', location.pathname);
   if (allowedRoles && role && !allowedRoles.includes(role)) return null;
 
   return (

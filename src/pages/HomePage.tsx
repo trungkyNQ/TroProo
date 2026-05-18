@@ -55,8 +55,15 @@ export const HomePage = ({
 
       if (error) throw error;
 
+      // Pre-compute isNew to avoid Date object creation inside the render loop
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const processedData = (data || []).map((item: any) => ({
+        ...item,
+        isNew: item.created_at ? new Date(item.created_at).getTime() > sevenDaysAgo : false
+      }));
+
       // Premium prioritizing order: enterprise -> pro -> free, then sort by newest
-      const sortedData = (data || []).sort((a: any, b: any) => {
+      const sortedData = processedData.sort((a: any, b: any) => {
         const tierA = a.profiles?.subscription_tier || 'free';
         const tierB = b.profiles?.subscription_tier || 'free';
         
@@ -78,7 +85,7 @@ export const HomePage = ({
       });
 
       // Featured = pro + enterprise only
-      const onlyFeatured = (data || [])
+      const onlyFeatured = processedData
         .filter((item: any) => ['pro', 'enterprise'].includes(item.profiles?.subscription_tier))
         .sort((a: any, b: any) => {
           const ta = a.profiles?.subscription_tier || 'free';
@@ -90,7 +97,7 @@ export const HomePage = ({
       setFeaturedListings(onlyFeatured.slice(0, 8));
 
       // Regular = free only
-      const onlyFree = (data || [])
+      const onlyFree = processedData
         .filter((item: any) => !['pro', 'enterprise'].includes(item.profiles?.subscription_tier))
         .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setRealListings(onlyFree.slice(0, 8));
@@ -572,7 +579,7 @@ export const HomePage = ({
                       variants={itemVariants}
                       whileHover={{ y: -7, scale: 1.015 }}
                       onClick={() => onNavigate('listing-detail', { id: item.id })}
-                      className={`group bg-white rounded-[22px] overflow-hidden transition-all duration-300 cursor-pointer relative ${
+                      className={`group bg-white rounded-[22px] overflow-hidden transition-[border-color,box-shadow] duration-300 cursor-pointer relative ${
                         isEnterprise
                           ? 'border-2 border-amber-400 shadow-lg shadow-amber-500/10 hover:shadow-xl hover:shadow-amber-500/20 hover:border-amber-500'
                           : 'border-2 border-orange-400 shadow-md shadow-orange-500/8 hover:shadow-xl hover:shadow-orange-500/15 hover:border-orange-500'
@@ -584,6 +591,7 @@ export const HomePage = ({
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           src={item.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800'}
                           referrerPolicy="no-referrer"
+                          loading="lazy"
                         />
                         {isEnterprise ? (
                           <div className="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 z-10">
@@ -661,11 +669,11 @@ export const HomePage = ({
                 const isEnterprise = tier === 'enterprise';
                 const isPro = tier === 'pro';
                 
-                let cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-slate-100 cursor-pointer relative";
+                let cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border border-slate-100 cursor-pointer relative";
                 if (isEnterprise) {
-                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border-2 border-amber-400 hover:border-amber-500 bg-gradient-to-b from-amber-500/[0.01] to-transparent cursor-pointer relative";
+                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border-2 border-amber-400 hover:border-amber-500 bg-gradient-to-b from-amber-500/[0.01] to-transparent cursor-pointer relative";
                 } else if (isPro) {
-                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border-2 border-orange-400 hover:border-orange-500 bg-gradient-to-b from-orange-500/[0.01] to-transparent cursor-pointer relative";
+                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border-2 border-orange-400 hover:border-orange-500 bg-gradient-to-b from-orange-500/[0.01] to-transparent cursor-pointer relative";
                 }
 
                 return (
@@ -682,6 +690,7 @@ export const HomePage = ({
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         src={item.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800'}
                         referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
                       {isEnterprise ? (
                         <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow flex items-center gap-1 z-10">
@@ -691,7 +700,7 @@ export const HomePage = ({
                         <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow flex items-center gap-1 z-10">
                           <Sparkles className="w-2.5 h-2.5 text-white fill-current" /> VIP PRO
                         </div>
-                      ) : new Date(item.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 ? (
+                      ) : item.isNew ? (
                         <div className="absolute top-2 left-2 text-white text-[10px] font-black px-2 py-1 rounded bg-primary uppercase tracking-widest z-10">MỚI</div>
                       ) : null}
                     </div>

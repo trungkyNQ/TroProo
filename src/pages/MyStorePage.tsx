@@ -180,7 +180,7 @@ export const MyStorePage = ({ onNavigate, user, onLogout, params }: MyStorePageP
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     localStorage.setItem('last_store_tab', activeTab);
