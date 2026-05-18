@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
 
-
 import { 
   Home, 
   Search, 
@@ -116,67 +115,30 @@ export const HomePage = ({
     });
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.12
-      }
-    }
-  } as const;
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  } as const;
-
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative w-full min-h-[680px] lg:h-[680px] py-16 lg:py-0 flex items-center bg-[#0B0F19] relative overflow-hidden bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] bg-center">
+        <section className="relative w-full min-h-[680px] lg:h-[680px] py-16 lg:py-0 flex items-center bg-[#0B0F19] overflow-hidden bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] bg-center">
           {/* Ambient Glows */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.08),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(249,115,22,0.05),transparent_40%)] pointer-events-none" />
           
           <div className="relative z-10 max-w-7xl mx-auto w-full px-4 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Left Column: Title, Description, Stats & Search Bar */}
             <div className="lg:col-span-7 flex flex-col items-start text-left">
-              {/* Title Heading */}
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                className="text-4xl md:text-6xl font-black text-white mb-6 leading-[1.15] font-display text-left tracking-tight"
-              >
+              {/* Title Heading - Animated Entry Removed */}
+              <h1 className="text-4xl md:text-6xl font-black text-white mb-6 leading-[1.15] font-display text-left tracking-tight">
                 Tìm phòng trọ<br/>
                 <span className="bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">Nhanh</span> • Đúng • <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">Tin cậy</span>
-              </motion.h1>
+              </h1>
 
-              {/* Subheading description */}
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="text-slate-400 text-sm md:text-base leading-relaxed mb-8 max-w-xl text-left font-semibold"
-              >
+              {/* Subheading description - Animated Entry Removed */}
+              <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-8 max-w-xl text-left font-semibold">
                 Hàng nghìn phòng trọ, chung cư mini, nhà nguyên căn được đăng mới mỗi ngày. Xem bản đồ thực tế, liên hệ trực tiếp chủ nhà — không qua trung gian.
-              </motion.p>
+              </p>
 
-              {/* Cohesive Dark Search Bar */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.15 }}
-                className="bg-slate-900/60 backdrop-blur-md p-2.5 rounded-2xl border border-slate-800/85 flex flex-col md:flex-row gap-2.5 w-full shadow-2xl"
-              >
+              {/* Cohesive Dark Search Bar - Animated Entry Removed */}
+              <div className="bg-slate-900/60 backdrop-blur-md p-2.5 rounded-2xl border border-slate-800/85 flex flex-col md:flex-row gap-2.5 w-full shadow-2xl">
                 {/* Location Selector */}
                 <div
                   className="flex-1 flex items-center px-4 border-b md:border-b-0 md:border-r border-slate-800/80 relative cursor-pointer group py-2 hover:bg-slate-800/30 rounded-xl transition-colors duration-200"
@@ -199,11 +161,7 @@ export const HomePage = ({
 
                   {/* Suggestions Dropdown */}
                   {showSuggestions && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute top-full left-0 right-0 mt-3 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-3 z-50 overflow-hidden text-left"
-                    >
+                    <div className="absolute top-full left-0 right-0 mt-3 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-3 z-50 overflow-hidden text-left">
                       <p className="px-5 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-950/40">Khu vực Đà Nẵng</p>
                       <button
                         onClick={(e) => {
@@ -230,7 +188,7 @@ export const HomePage = ({
                           {district}
                         </button>
                       ))}
-                    </motion.div>
+                    </div>
                   )}
                 </div>
 
@@ -258,11 +216,7 @@ export const HomePage = ({
 
                   {/* Price Dropdown */}
                   {showPriceDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute top-full left-0 right-0 mt-3 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-3 z-50 overflow-hidden text-left"
-                    >
+                    <div className="absolute top-full left-0 right-0 mt-3 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-3 z-50 overflow-hidden text-left">
                       {[
                         { id: 'all', label: 'Tất cả mức giá' },
                         { id: 'under2', label: 'Dưới 2 triệu' },
@@ -282,7 +236,7 @@ export const HomePage = ({
                           {item.label}
                         </button>
                       ))}
-                    </motion.div>
+                    </div>
                   )}
                 </div>
 
@@ -308,11 +262,7 @@ export const HomePage = ({
 
                   {/* Type Dropdown */}
                   {showTypeDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute top-full left-0 right-0 mt-3 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-3 z-50 overflow-hidden text-left"
-                    >
+                    <div className="absolute top-full left-0 right-0 mt-3 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-3 z-50 overflow-hidden text-left">
                       {[
                         { id: 'all', label: 'Tất cả loại' },
                         { id: 'Phòng trọ', label: 'Phòng trọ' },
@@ -332,7 +282,7 @@ export const HomePage = ({
                           {item.label}
                         </button>
                       ))}
-                    </motion.div>
+                    </div>
                   )}
                 </div>
 
@@ -344,30 +294,20 @@ export const HomePage = ({
                   <Search className="w-4 h-4" />
                   Tìm kiếm
                 </button>
-              </motion.div>
+              </div>
 
-              {/* Stats Block - Centered */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="flex items-center justify-center lg:justify-start mt-10 border-t border-slate-800/60 pt-8 w-full"
-              >
+              {/* Stats Block - Animated Entry Removed */}
+              <div className="flex items-center justify-center lg:justify-start mt-10 border-t border-slate-800/60 pt-8 w-full">
                 <div>
                   <p className="text-3xl font-black bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent font-display text-center lg:text-left">Đăng tin miễn phí</p>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 text-center lg:text-left">Dành cho chủ trọ đăng bài tìm kiếm người thuê</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
-            {/* Right Column: Floating Mockup Cards */}
+            {/* Right Column: Floating Mockup Cards - Animated Entry Removed */}
             <div className="lg:col-span-5 hidden lg:flex items-center justify-center relative select-none">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.8 }}
-                className="relative max-w-sm w-full group cursor-default"
-              >
+              <div className="relative max-w-sm w-full group cursor-default">
                 {/* Glow behind card */}
                 <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-3xl opacity-30 group-hover:opacity-40 transition-opacity duration-500" />
                 
@@ -432,7 +372,7 @@ export const HomePage = ({
                     <p className="text-[7.5px] font-bold text-slate-400 mt-0.5">Dưới 1km đi bộ</p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
 
@@ -446,17 +386,12 @@ export const HomePage = ({
         </section>
 
         {/* ── 3 Steps Guide Section ── */}
-        <section className="py-20 bg-slate-50/30 overflow-hidden">
+        <section className="py-2 bg-slate-50/30 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 text-center">
-            {/* Header animation */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            >
+            {/* Header - Animated Entry Removed */}
+            <div>
               {/* Badge */}
-              <div className="inline-block px-3.5 py-1 bg-orange-100/60 rounded-full mb-4 border border-orange-200/20">
+              <div className="inline-block px-3.5 bg-orange-100/60 rounded-full mb-4 border border-orange-200/20">
                 <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary font-display">ĐƠN GIẢN</span>
               </div>
               
@@ -469,21 +404,12 @@ export const HomePage = ({
               <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto leading-relaxed">
                 Không phức tạp, không qua trung gian, liên hệ trực tiếp chủ nhà
               </p>
-            </motion.div>
+            </div>
 
-            {/* Steps Cards Grid with stagger animation */}
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mt-14 max-w-6xl mx-auto text-left"
-            >
+            {/* Steps Cards Grid - Animated Entry Removed */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mt-14 max-w-6xl mx-auto text-left">
               {/* Step 1 */}
-              <motion.div 
-                variants={itemVariants}
-                className="relative bg-white rounded-3xl p-8 md:p-10 border border-slate-100/80 shadow-lg shadow-slate-100/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden"
-              >
+              <div className="relative bg-white rounded-3xl p-8 md:p-10 border border-slate-100/80 shadow-lg shadow-slate-100/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
                 <span className="absolute top-4 right-6 text-5xl font-black text-orange-500/10 font-display select-none group-hover:scale-110 transition-transform duration-300">01</span>
                 <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500 mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Search className="w-6 h-6" />
@@ -492,13 +418,10 @@ export const HomePage = ({
                 <p className="text-slate-500 text-xs md:text-sm leading-relaxed">
                   Nhập địa chỉ, chọn loại phòng và khoảng giá phù hợp với bạn
                 </p>
-              </motion.div>
+              </div>
 
               {/* Step 2 */}
-              <motion.div 
-                variants={itemVariants}
-                className="relative bg-white rounded-3xl p-8 md:p-10 border border-slate-100/80 shadow-lg shadow-slate-100/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden"
-              >
+              <div className="relative bg-white rounded-3xl p-8 md:p-10 border border-slate-100/80 shadow-lg shadow-slate-100/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
                 <span className="absolute top-4 right-6 text-5xl font-black text-purple-500/10 font-display select-none group-hover:scale-110 transition-transform duration-300">02</span>
                 <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-500 mb-6 group-hover:scale-110 transition-transform duration-300">
                   <MapPin className="w-6 h-6" />
@@ -507,13 +430,10 @@ export const HomePage = ({
                 <p className="text-slate-500 text-xs md:text-sm leading-relaxed">
                   Xem vị trí thực tế trên bản đồ, kiểm tra tiện ích xung quanh
                 </p>
-              </motion.div>
+              </div>
 
               {/* Step 3 */}
-              <motion.div 
-                variants={itemVariants}
-                className="relative bg-white rounded-3xl p-8 md:p-10 border border-slate-100/80 shadow-lg shadow-slate-100/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden"
-              >
+              <div className="relative bg-white rounded-3xl p-8 md:p-10 border border-slate-100/80 shadow-lg shadow-slate-100/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
                 <span className="absolute top-4 right-6 text-5xl font-black text-emerald-500/10 font-display select-none group-hover:scale-110 transition-transform duration-300">03</span>
                 <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Phone className="w-6 h-6" />
@@ -522,10 +442,11 @@ export const HomePage = ({
                 <p className="text-slate-500 text-xs md:text-sm leading-relaxed">
                   Gọi điện hoặc nhắn tin trực tiếp cho chủ nhà, không qua trung gian
                 </p>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
         </section>
+
         {/* ── Featured (Pro + Enterprise) Section ── */}
         {featuredListings.length > 0 && (
           <section id="featured-listings" className="max-w-7xl mx-auto px-4 py-16 overflow-hidden relative mb-4">
@@ -536,13 +457,8 @@ export const HomePage = ({
             {/* Glowing border wrapper */}
             <div className="relative rounded-[40px] border border-orange-400/20 bg-gradient-to-b from-orange-500/[0.03] via-transparent to-amber-500/[0.02] px-4 py-10 shadow-[0_0_60px_0_rgba(249,115,22,0.05)]">
 
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="flex items-center justify-between mb-10"
-              >
+              {/* Header - Animated Entry Removed */}
+              <div className="flex items-center justify-between mb-10">
                 <div className="text-left space-y-2">
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25">
                     <Sparkles className="w-3.5 h-3.5 fill-current animate-spin" style={{ animationDuration: '3s' }} />
@@ -561,34 +477,28 @@ export const HomePage = ({
                   Xem tất cả
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
-              </motion.div>
+              </div>
 
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-100px" }}
-                className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
-              >
+              {/* Grid - Stagger and entrance slide removed, hover animations kept */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {featuredListings.map((item) => {
                   const tier = item.profiles?.subscription_tier;
                   const isEnterprise = tier === 'enterprise';
                   return (
                     <motion.div
                       key={item.id}
-                      variants={itemVariants}
                       whileHover={{ y: -7, scale: 1.015 }}
                       onClick={() => onNavigate('listing-detail', { id: item.id })}
-                      className={`group bg-white rounded-[22px] overflow-hidden transition-[border-color,box-shadow] duration-300 cursor-pointer relative ${
+                      className={`group bg-white rounded-[22px] overflow-hidden transition-[border-color,box-shadow] duration-300 cursor-pointer relative transform-gpu will-change-transform ${
                         isEnterprise
                           ? 'border-2 border-amber-400 shadow-lg shadow-amber-500/10 hover:shadow-xl hover:shadow-amber-500/20 hover:border-amber-500'
                           : 'border-2 border-orange-400 shadow-md shadow-orange-500/8 hover:shadow-xl hover:shadow-orange-500/15 hover:border-orange-500'
                       }`}
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden">
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-t-[20px]">
                         <img
                           alt={item.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 transform-gpu will-change-transform"
                           src={item.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800'}
                           referrerPolicy="no-referrer"
                           loading="lazy"
@@ -627,20 +537,15 @@ export const HomePage = ({
                     </motion.div>
                   );
                 })}
-              </motion.div>
+              </div>
             </div>
           </section>
         )}
 
-        {/* Featured Section */}
+        {/* New Listings Section */}
         <section id="new-listings" className="max-w-7xl mx-auto px-4 py-16 overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="flex items-center justify-between mb-8"
-          >
+          {/* Header - Animated Entry Removed */}
+          <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 font-display">Phòng trọ mới đăng</h2>
               <p className="text-slate-500 mt-1">Tin đăng thông thường — cập nhật mới nhất hàng ngày</p>
@@ -648,7 +553,7 @@ export const HomePage = ({
             <a className="text-primary font-semibold flex items-center gap-1 hover:underline cursor-pointer" onClick={(e) => { e.preventDefault(); onNavigate('search'); }}>
               Xem tất cả <ArrowRight className="w-4 h-4" />
             </a>
-          </motion.div>
+          </div>
 
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
@@ -657,37 +562,31 @@ export const HomePage = ({
               ))}
             </div>
           ) : realListings.length > 0 ? (
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6"
-            >
+            /* Grid - Entrance animation and stagger removed, hover animations kept */
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {realListings.map((item) => {
                 const tier = item.profiles?.subscription_tier || 'free';
                 const isEnterprise = tier === 'enterprise';
                 const isPro = tier === 'pro';
                 
-                let cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border border-slate-100 cursor-pointer relative";
+                let cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border border-slate-100 cursor-pointer relative transform-gpu will-change-transform";
                 if (isEnterprise) {
-                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border-2 border-amber-400 hover:border-amber-500 bg-gradient-to-b from-amber-500/[0.01] to-transparent cursor-pointer relative";
+                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border-2 border-amber-400 hover:border-amber-500 bg-gradient-to-b from-amber-500/[0.01] to-transparent cursor-pointer relative transform-gpu will-change-transform";
                 } else if (isPro) {
-                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border-2 border-orange-400 hover:border-orange-500 bg-gradient-to-b from-orange-500/[0.01] to-transparent cursor-pointer relative";
+                  cardClass = "group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 border-2 border-orange-400 hover:border-orange-500 bg-gradient-to-b from-orange-500/[0.01] to-transparent cursor-pointer relative transform-gpu will-change-transform";
                 }
 
                 return (
                   <motion.div
                     key={item.id}
-                    variants={itemVariants}
                     whileHover={{ y: -5 }}
                     onClick={() => onNavigate('listing-detail', { id: item.id })}
                     className={cardClass}
                   >
-                    <div className="relative aspect-[4/3] overflow-hidden">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
                       <img
                         alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 transform-gpu will-change-transform"
                         src={item.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800'}
                         referrerPolicy="no-referrer"
                         loading="lazy"
@@ -724,7 +623,7 @@ export const HomePage = ({
                   </motion.div>
                 );
               })}
-            </motion.div>
+            </div>
           ) : (
             <div className="col-span-full py-12 text-center">
               <p className="text-slate-400 font-bold">Chưa có bài đăng nào.</p>
@@ -736,14 +635,8 @@ export const HomePage = ({
         <section className="py-20 bg-white border-t border-slate-50 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 md:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Left Column: Text & CTA with slide-in animation */}
-              <motion.div 
-                initial={{ opacity: 0, x: -40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                className="lg:col-span-5 text-left"
-              >
+              {/* Left Column: Text & CTA - Animated Entry Removed */}
+              <div className="lg:col-span-5 text-left">
                 {/* Badge */}
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-500 rounded-full mb-5 border border-red-100/50">
                   <span className="text-[10px] md:text-xs font-black uppercase tracking-widest font-display flex items-center gap-1.5">
@@ -773,22 +666,13 @@ export const HomePage = ({
                   <span>Xem hướng dẫn thuê phòng đầy đủ</span>
                   <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
                 </button>
-              </motion.div>
+              </div>
 
-              {/* Right Column: 2x2 Interactive Grid with stagger entrance */}
-              <motion.div 
-                variants={containerVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-100px" }}
-                className="lg:col-span-7"
-              >
+              {/* Right Column: 2x2 Interactive Grid - Animated Entrance and Staggers Removed */}
+              <div className="lg:col-span-7">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   {/* Card 1: Phòng trọ */}
-                  <motion.div 
-                    variants={itemVariants}
-                    className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-orange-500 hover:-translate-y-1 duration-300"
-                  >
+                  <div className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-orange-500 hover:-translate-y-1 duration-300">
                     <span className="absolute top-4 right-4 px-2.5 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[9px] font-black uppercase tracking-widest font-display">Phổ biến nhất</span>
                     <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 mb-4 group-hover:scale-105 transition-transform duration-300">
                       <Home className="w-5 h-5" />
@@ -796,13 +680,10 @@ export const HomePage = ({
                     <h3 className="text-base font-black text-slate-900 mb-1 font-display">Phòng trọ</h3>
                     <p className="text-slate-400 text-xs mb-2">10-30m²</p>
                     <p className="text-sm font-black text-orange-500">1-4 triệu/tháng</p>
-                  </motion.div>
+                  </div>
 
                   {/* Card 2: Chung cư mini */}
-                  <motion.div 
-                    variants={itemVariants}
-                    className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-indigo-500 hover:-translate-y-1 duration-300"
-                  >
+                  <div className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-indigo-500 hover:-translate-y-1 duration-300">
                     <span className="absolute top-4 right-4 px-2.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest font-display">Riêng tư cao</span>
                     <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 mb-4 group-hover:scale-105 transition-transform duration-300">
                       <svg viewBox="0 0 24 24" className="w-5 h-5 stroke-current fill-none stroke-2">
@@ -812,13 +693,10 @@ export const HomePage = ({
                     <h3 className="text-base font-black text-slate-900 mb-1 font-display">Chung cư mini</h3>
                     <p className="text-slate-400 text-xs mb-2">25-50m²</p>
                     <p className="text-sm font-black text-indigo-500">4-10 triệu/tháng</p>
-                  </motion.div>
+                  </div>
 
                   {/* Card 3: Nhà nguyên căn */}
-                  <motion.div 
-                    variants={itemVariants}
-                    className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-emerald-500 hover:-translate-y-1 duration-300"
-                  >
+                  <div className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-emerald-500 hover:-translate-y-1 duration-300">
                     <span className="absolute top-4 right-4 px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest font-display">Cho gia đình</span>
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 mb-4 group-hover:scale-105 transition-transform duration-300">
                       <svg viewBox="0 0 24 24" className="w-5 h-5 stroke-current fill-none stroke-2">
@@ -828,13 +706,10 @@ export const HomePage = ({
                     <h3 className="text-base font-black text-slate-900 mb-1 font-display">Nhà nguyên căn</h3>
                     <p className="text-slate-400 text-xs mb-2">50-150m²</p>
                     <p className="text-sm font-black text-emerald-500">8-25 triệu/tháng</p>
-                  </motion.div>
+                  </div>
 
                   {/* Card 4: Ở ghép */}
-                  <motion.div 
-                    variants={itemVariants}
-                    className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-amber-500 hover:-translate-y-1 duration-300"
-                  >
+                  <div className="bg-slate-50/40 rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-amber-500 hover:-translate-y-1 duration-300">
                     <span className="absolute top-4 right-4 px-2.5 py-0.5 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest font-display">Linh hoạt</span>
                     <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 mb-4 group-hover:scale-105 transition-transform duration-300">
                       <svg viewBox="0 0 24 24" className="w-5 h-5 stroke-current fill-none stroke-2">
@@ -844,38 +719,25 @@ export const HomePage = ({
                     <h3 className="text-base font-black text-slate-900 mb-1 font-display">Ở ghép</h3>
                     <p className="text-slate-400 text-xs mb-2">Chia sẻ phòng</p>
                     <p className="text-sm font-black text-amber-500 font-display">Tiết kiệm 40-60%</p>
-                  </motion.div>
+                  </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Popular Areas */}
+        {/* Popular Areas - Animated Entry and Staggers Removed */}
         <section className="bg-slate-100 py-16 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="text-center mb-12"
-            >
+            <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-slate-900 mb-4 font-display">Khu vực nổi bật</h2>
               <p className="text-slate-500">Khám phá phòng trọ tại các quận huyện nhộn nhịp nhất</p>
-            </motion.div>
+            </div>
             
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
-            >
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {areas.map((area) => (
-                <motion.a 
+                <a 
                   key={area.name} 
-                  variants={itemVariants}
                   className="relative h-64 rounded-xl overflow-hidden group cursor-pointer" 
                   href="#"
                   onClick={(e) => {
@@ -893,15 +755,12 @@ export const HomePage = ({
                   <div className="absolute bottom-4 left-4 text-white">
                     <p className="text-lg font-bold font-display">{area.name}</p>
                   </div>
-                </motion.a>
+                </a>
               ))}
-            </motion.div>
+            </div>
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      
     </div>
   );
 };

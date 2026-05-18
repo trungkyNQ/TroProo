@@ -32,6 +32,7 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeRoomFilter, setActiveRoomFilter] = useState('all');
+  const [activeMonthFilter, setActiveMonthFilter] = useState('all');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
@@ -77,7 +78,23 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
   const filteredAlerts = alerts.filter(a => {
     const matchLevel = activeFilter === 'all' || a.risk_level === activeFilter;
     const matchRoom = activeRoomFilter === 'all' || a.room_id === activeRoomFilter;
-    return matchLevel && matchRoom;
+    
+    let matchMonth = true;
+    if (activeMonthFilter !== 'all') {
+      if (a.detected_at) {
+        const date = new Date(a.detected_at);
+        if (!isNaN(date.getTime())) {
+          const month = (date.getMonth() + 1).toString();
+          matchMonth = month === activeMonthFilter;
+        } else {
+          matchMonth = false;
+        }
+      } else {
+        matchMonth = false;
+      }
+    }
+    
+    return matchLevel && matchRoom && matchMonth;
   });
 
   const stats = [
@@ -226,18 +243,34 @@ export const RiskAlerts: React.FC<{ onNavigate?: (page: string, params?: any) =>
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Phòng:</span>
-                <select 
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-50 text-slate-700 border border-slate-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer min-w-[150px]"
-                  value={activeRoomFilter}
-                  onChange={(e) => setActiveRoomFilter(e.target.value)}
-                >
-                  <option value="all">Tất cả phòng</option>
-                  {uniqueRooms.map(room => (
-                    <option key={room.id} value={room.id}>{room.title}</option>
-                  ))}
-                </select>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Phòng:</span>
+                  <select 
+                    className="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-50 text-slate-700 border border-slate-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer min-w-[150px]"
+                    value={activeRoomFilter}
+                    onChange={(e) => setActiveRoomFilter(e.target.value)}
+                  >
+                    <option value="all">Tất cả phòng</option>
+                    {uniqueRooms.map(room => (
+                      <option key={room.id} value={room.id}>{room.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Tháng:</span>
+                  <select 
+                    className="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-50 text-slate-700 border border-slate-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer min-w-[130px]"
+                    value={activeMonthFilter}
+                    onChange={(e) => setActiveMonthFilter(e.target.value)}
+                  >
+                    <option value="all">Tất cả tháng</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                      <option key={m} value={m.toString()}>Tháng {m}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           <div className="overflow-x-auto">

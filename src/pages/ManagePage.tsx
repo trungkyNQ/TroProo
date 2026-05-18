@@ -171,7 +171,8 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
   const [listingForm, setListingForm] = useState({
     title: '', description: '', price: '', area: '', type: 'Phòng trọ',
     location: '', street: '', image_url: '',
-    electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: ''
+    electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '',
+    images: [] as string[]
   });
 
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'enterprise'>('free');
@@ -582,8 +583,8 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         type: listingForm.type,
         location: listingForm.location || null,
         street: listingForm.street || null,
-        image_url: listingForm.image_url || null,
-        images: listingForm.image_url ? [listingForm.image_url] : [],
+        image_url: listingForm.images && listingForm.images.length > 0 ? listingForm.images[0] : (listingForm.image_url || null),
+        images: listingForm.images || [],
         electricity_price: Number(listingForm.electricity_price) || 3500,
         water_price: Number(listingForm.water_price) || 20000,
         service_fee: Number(listingForm.service_fee) || 150000,
@@ -604,8 +605,8 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
             type: listingForm.type,
             location: listingForm.location || null,
             street: listingForm.street || null,
-            image_url: listingForm.image_url || null,
-            images: listingForm.image_url ? [listingForm.image_url] : [],
+            image_url: listingForm.images && listingForm.images.length > 0 ? listingForm.images[0] : (listingForm.image_url || null),
+            images: listingForm.images || [],
             electricity_price: Number(listingForm.electricity_price) || 3500,
             water_price: Number(listingForm.water_price) || 20000,
             service_fee: Number(listingForm.service_fee) || 150000,
@@ -635,7 +636,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
 
       setShowAddListingModal(false);
       setEditingListingId(null);
-      setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' });
+      setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '', images: [] });
       await fetchDashboardData();
     } catch (err) {
       console.error('Error adding/updating listing:', err);
@@ -681,7 +682,8 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
       electricity_price: listing.electricity_price || 3500,
       water_price: listing.water_price || 20000,
       service_fee: listing.service_fee || 150000,
-      deposit: listing.deposit?.toString() || ''
+      deposit: listing.deposit?.toString() || '',
+      images: listing.images || (listing.image_url ? [listing.image_url] : [])
     });
     setShowAddListingModal(true);
   };
@@ -1174,7 +1176,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
               setShowAddListingModal={(v) => {
                 if (v) {
                   setEditingListingId(null);
-                  setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' });
+                  setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '', images: [] });
                 }
                 setShowAddListingModal(v);
               }}
@@ -1276,7 +1278,7 @@ export const ManagePage = ({ onNavigate, user, onLogout, initialParams }: Manage
         onClose={() => {
           setShowAddListingModal(false);
           setEditingListingId(null);
-          setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '' });
+          setListingForm({ title: '', description: '', price: '', area: '', type: 'Phòng trọ', location: '', street: '', image_url: '', electricity_price: 3500, water_price: 20000, service_fee: 150000, deposit: '', images: [] });
         }}
         form={listingForm}
         setForm={setListingForm}

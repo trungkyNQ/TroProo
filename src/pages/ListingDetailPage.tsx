@@ -298,11 +298,15 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
 
           if (data && !error) {
             // Merge với mock data nếu database thiếu cột mới
+            const listingImages = data.images && data.images.length > 0
+              ? data.images
+              : (data.image_url ? [data.image_url] : mockListing.images);
+
             setListing({
               ...mockListing,
               ...data,
               landlord: landlordData,
-              images: data.images?.length > 0 ? data.images : mockListing.images,
+              images: listingImages,
               amenities: data.amenities?.length > 0 ? data.amenities : mockListing.amenities,
               electricity_price: data.electricity_price || mockListing.electricity_price,
               water_price: data.water_price || mockListing.water_price,
@@ -457,13 +461,14 @@ export const ListingDetailPage = ({ onNavigate, user, onLogout, params }: Listin
                   <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                 </button>
               </div>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="flex flex-wrap gap-2">
                 {listing.images.map((img: string, idx: number) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
-                    className={`aspect-video rounded-lg overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-indigo-600 opacity-100' : 'border-transparent opacity-70 hover:opacity-100'
-                      }`}
+                    className={`w-20 sm:w-24 aspect-video rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
+                      activeImage === idx ? 'border-indigo-600 opacity-100 scale-105 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
+                    }`}
                   >
                     <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
