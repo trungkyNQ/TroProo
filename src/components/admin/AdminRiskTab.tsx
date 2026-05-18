@@ -36,6 +36,15 @@ interface AdminRiskTabProps {
 export const AdminRiskTab = ({ risks, loading, onNavigateToRoom }: AdminRiskTabProps) => {
   const [filter, setFilter] = useState<'all' | 'cao' | 'dien' | 'nuoc'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // New Room, Month, Year Filter States
+  const [selectedRoom, setSelectedRoom] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+
+  // Extract unique rooms and years from risks data
+  const uniqueRooms = Array.from(new Set(risks.map(r => r.roomInfo?.title).filter(Boolean))).sort();
+  const uniqueYears = Array.from(new Set(risks.map(r => new Date(r.detected_at).getFullYear()).filter(Boolean))).sort((a, b) => b - a);
 
   const getRiskLevelColor = (level: string) => {
     switch (level) {
@@ -88,7 +97,22 @@ export const AdminRiskTab = ({ risks, loading, onNavigateToRoom }: AdminRiskTabP
     if (filter === 'dien' && r.risk_type !== 'dien') return false;
     if (filter === 'nuoc' && r.risk_type !== 'nuoc') return false;
 
-    // 2. Search query filter
+    // 2. Room filter
+    if (selectedRoom !== 'all' && r.roomInfo?.title !== selectedRoom) return false;
+
+    // 3. Month filter
+    if (selectedMonth !== 'all') {
+      const date = new Date(r.detected_at);
+      if ((date.getMonth() + 1).toString() !== selectedMonth) return false;
+    }
+
+    // 4. Year filter
+    if (selectedYear !== 'all') {
+      const date = new Date(r.detected_at);
+      if (date.getFullYear().toString() !== selectedYear) return false;
+    }
+
+    // 5. Search query filter
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     const title = r.roomInfo?.title?.toLowerCase() || '';
@@ -193,34 +217,102 @@ export const AdminRiskTab = ({ risks, loading, onNavigateToRoom }: AdminRiskTabP
       </div>
 
       {/* Control Actions & Searching */}
-      <div className="flex flex-col md:flex-row items-center gap-4 mb-6 shrink-0 bg-slate-50 p-4 rounded-3xl border border-slate-200/60">
-        
-        {/* Local Search Input */}
-        <div className="relative w-full md:flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Tìm kiếm cảnh báo theo tên phòng, địa điểm, nội dung bất thường..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-10 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all shadow-inner"
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-full transition-colors"
-            >
-              <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
-            </button>
-          )}
+      <div className="flex flex-col gap-4 mb-6 shrink-0 bg-slate-50 p-5 rounded-3xl border border-slate-200/60 shadow-inner">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          
+          {/* Local Search Input */}
+          <div className="relative w-full md:flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Tìm kiếm cảnh báo theo tên phòng, địa điểm, nội dung bất thường..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-10 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all shadow-inner"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+              </button>
+            )}
+          </div>
+
+          {/* Local Filter Info Badge */}
+          <div className="flex items-center gap-2 self-stretch md:self-auto px-4 py-2.5 bg-white rounded-2xl border border-slate-200/80 shrink-0">
+            <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Hiển thị:</span>
+            <span className="text-xs font-black text-primary uppercase bg-primary/5 px-2.5 py-1 rounded-xl border border-primary/10">
+              {filteredRisks.length} cảnh báo
+            </span>
+          </div>
         </div>
 
-        {/* Local Filter Info Badge */}
-        <div className="flex items-center gap-2 self-stretch md:self-auto px-4 py-2 bg-white rounded-2xl border border-slate-200/80">
-          <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Hiển thị:</span>
-          <span className="text-xs font-black text-primary uppercase bg-primary/5 px-2.5 py-1 rounded-xl border border-primary/10">
-            {filteredRisks.length} cảnh báo
-          </span>
+        {/* Dynamic Select Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 pt-3.5 border-t border-slate-200/60">
+          
+          {/* Room Filter */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1.5">Lọc theo phòng</label>
+            <select
+              value={selectedRoom}
+              onChange={(e) => setSelectedRoom(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-primary transition-all cursor-pointer shadow-sm"
+            >
+              <option value="all">Tất cả các phòng</option>
+              {uniqueRooms.map((roomName: any) => (
+                <option key={roomName} value={roomName}>{roomName}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Month Filter */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1.5">Lọc theo tháng</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-primary transition-all cursor-pointer shadow-sm"
+            >
+              <option value="all">Tất cả các tháng</option>
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map((m) => (
+                <option key={m} value={m}>Tháng {m}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Year Filter */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1.5">Lọc theo năm</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-primary transition-all cursor-pointer shadow-sm"
+            >
+              <option value="all">Tất cả các năm</option>
+              {uniqueYears.map((y: any) => (
+                <option key={y} value={y.toString()}>Năm {y}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reset button */}
+          {(selectedRoom !== 'all' || selectedMonth !== 'all' || selectedYear !== 'all') && (
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setSelectedRoom('all');
+                  setSelectedMonth('all');
+                  setSelectedYear('all');
+                }}
+                className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+              >
+                <X className="w-3.5 h-3.5 text-slate-500" />
+                Xóa bộ lọc
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
