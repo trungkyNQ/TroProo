@@ -22,7 +22,10 @@ import {
   FileSignature,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Crown,
+  Receipt,
+  Wallet
 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Page } from '../components/layout/Header';
@@ -37,6 +40,8 @@ import { AdminReportsTab } from '../components/admin/AdminReportsTab';
 import { AdminRiskTab } from '../components/admin/AdminRiskTab';
 import { AdminOrdersTab } from '../components/admin/AdminOrdersTab';
 import { AdminContractsTab } from '../components/admin/AdminContractsTab';
+import { AdminServicesTab } from '../components/admin/AdminServicesTab';
+import { AdminServiceInvoicesTab } from '../components/admin/AdminServiceInvoicesTab';
 import { AdminDashboardSkeleton, AdminTableSkeleton } from '../components/admin/AdminSkeletons';
 
 
@@ -138,13 +143,13 @@ interface OverallStats {
   totalProducts: number;
 }
 
-type AdminView = 'dashboard' | 'listings' | 'users' | 'reports' | 'risks' | 'orders' | 'contracts';
+type AdminView = 'dashboard' | 'listings' | 'users' | 'services' | 'reports' | 'risks' | 'orders' | 'contracts' | 'service-invoices';
 
 export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   const getInitialView = (): AdminView => {
     const params = new URLSearchParams(window.location.search);
     const urlView = params.get('view') as AdminView;
-    const validViews: AdminView[] = ['dashboard', 'listings', 'users', 'reports', 'risks', 'orders', 'contracts'];
+    const validViews: AdminView[] = ['dashboard', 'listings', 'users', 'services', 'reports', 'risks', 'orders', 'contracts', 'service-invoices'];
     
     if (urlView && validViews.includes(urlView)) return urlView;
     
@@ -214,6 +219,9 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
   // Contracts State
   const [contractsList, setContractsList] = useState<any[]>([]);
 
+  // Service Invoices State
+  const [serviceInvoices, setServiceInvoices] = useState<any[]>([]);
+
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -273,7 +281,8 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
           fetchReports(),
           fetchRiskAlerts(),
           fetchOrders(),
-          fetchContracts()
+          fetchContracts(),
+          fetchServiceInvoices()
         ]);
       } catch (error) {
         console.error('Error fetching initial admin data:', error);
@@ -849,25 +858,41 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
       const [
         { count: listingsCount },
         { count: usersCount },
-        { data: revenueData },
+        { data: serviceInvoicesData },
         { count: contractsCount },
-        { count: productsCount }
+        { count: productsCount },
+        { data: premiumProfilesData },
+        { data: servicesData }
       ] = await Promise.all([
         supabase.from('listings').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('invoices').select('amount').eq('status', 'paid'), // Giả định status đã thanh toán
+        supabase.from('service_invoices').select('amount').eq('status', 'success'),
         supabase.from('contracts').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('products').select('*', { count: 'exact', head: true })
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('profiles')
+          .select('id, full_name, avatar_url, phone, subscription_tier, subscription_created_at, subscription_expires_at')
+          .in('subscription_tier', ['pro', 'enterprise'])
+          .order('subscription_created_at', { ascending: false }),
+        supabase.from('system_services').select('id, numerical_price')
       ]) as any[];
 
-      const totalRevenue = revenueData?.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0) || 0;
+      const priceMap = new Map();
+      servicesData?.forEach((s: any) => {
+        priceMap.set(s.id, s.numerical_price);
+      });
+
+      const subscriptionRevenue = serviceInvoicesData?.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0) || 0;
 
       setOverallStats({
         totalListings: listingsCount || 0,
         totalUsers: usersCount || 0,
-        totalRevenue,
+        totalRevenue: subscriptionRevenue,
+        subscriptionRevenue,
         activeContracts: contractsCount || 0,
-        totalProducts: productsCount || 0
+        totalProducts: productsCount || 0,
+        premiumUsers: premiumProfilesData || [],
+        proPrice: priceMap.get('pro') || 199000,
+        enterprisePrice: priceMap.get('enterprise') || 499000
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -1200,6 +1225,27 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     }
   };
 
+  const fetchServiceInvoices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('service_invoices')
+        .select(`
+          *,
+          profiles (
+            full_name,
+            phone,
+            avatar_url
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setServiceInvoices(data || []);
+    } catch (error) {
+      console.error('Error fetching service invoices:', error);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const d = new Date(dateString);
@@ -1210,9 +1256,11 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
     { id: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard },
     { id: 'listings', label: 'Quản lý tin đăng', icon: FileText },
     { id: 'users', label: 'Quản lý người dùng', icon: Users },
+    { id: 'services', label: 'Quản lý dịch vụ', icon: Crown },
     { id: 'reports', label: 'Báo cáo và phản hồi', icon: BarChart },
     { id: 'risks', label: 'Cảnh báo Rủi ro AI', icon: ShieldAlert },
     { id: 'orders', label: 'Quản lý Đơn hàng', icon: ShoppingCart },
+    { id: 'service-invoices', label: 'Hóa đơn Dịch vụ', icon: Receipt },
     { id: 'contracts', label: 'Quản lý Hợp đồng', icon: FileSignature }
   ];
 
@@ -1395,6 +1443,11 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
             />
           )}
 
+            {/* VIEW: QUẢN LÝ DỊCH VỤ */}
+            {currentView === 'services' && (
+              <AdminServicesTab />
+            )}
+
             {/* VIEW: BẢNG ĐIỀU KHIỂN (DASHBOARD) */}
             {currentView === 'dashboard' && (
             <AdminDashboardTab setCurrentView={setCurrentView} setListingMode={setListingMode} 
@@ -1437,6 +1490,16 @@ export const AdminPage = ({ user, onLogout, onNavigate }: AdminPageProps) => {
                 handleDeleteOrder={handleDeleteOrder}
                 formatDate={formatDate}
                 getInitials={getInitials}
+              />
+            )}
+
+            {/* VIEW: HÓA ĐƠN DỊCH VỤ VIP */}
+            {currentView === 'service-invoices' && (
+              <AdminServiceInvoicesTab 
+                invoices={serviceInvoices}
+                loading={loading}
+                onRefresh={fetchServiceInvoices}
+                formatDate={formatDate}
               />
             )}
 

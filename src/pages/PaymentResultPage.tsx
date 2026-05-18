@@ -55,6 +55,22 @@ export const PaymentResultPage = ({ onNavigate, params }: PaymentResultPageProps
                   .eq('id', userId);
 
                 if (updateError) throw updateError;
+
+                // Insert record into service_invoices
+                const amountPaid = vnp_Amount ? (parseInt(vnp_Amount) / 100) : (tier === 'pro' ? 199000 : 499000);
+                const { error: invoiceError } = await supabase
+                  .from('service_invoices')
+                  .insert({
+                    user_id: userId,
+                    txn_ref: vnp_TxnRef,
+                    amount: amountPaid,
+                    tier: tier,
+                    status: 'success'
+                  });
+
+                if (invoiceError) {
+                  console.error('Lỗi lưu hóa đơn dịch vụ:', invoiceError);
+                }
               }
             } catch (err) {
               console.error('Lỗi cập nhật gói dịch vụ chủ trọ:', err);

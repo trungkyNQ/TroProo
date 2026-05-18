@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, Zap, Star, Crown, HelpCircle, X, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
+import { Check, Zap, Star, Crown, HelpCircle, X, Sparkles, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from '../context/ToastContext';
+import { supabase } from '../lib/supabase';
 
 interface PricingPageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -14,55 +15,64 @@ export const PricingPage = ({ onNavigate, user, onLogout }: PricingPageProps) =>
   const { showToast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [currentSubscriptionTier, setCurrentSubscriptionTier] = useState<'free' | 'pro' | 'enterprise'>('free');
 
-  const plans = [
-    {
-      name: 'Gói Miễn Phí',
-      price: '0',
-      numericalPrice: 0,
-      description: 'Dành cho cá nhân muốn đăng tin lẻ',
-      features: [
-        'Đăng tối đa 2 tin/tháng',
-        'Hiển thị trong 7 ngày',
-        'Ảnh tối đa 5 tấm/tin',
-        'Hỗ trợ qua email'
-      ],
-      buttonText: 'Bắt đầu ngay',
-      premium: false
-    },
-    {
-      name: 'Gói Chuyên Nghiệp',
-      price: '199.000',
-      numericalPrice: 199000,
-      description: 'Lựa chọn tốt nhất cho chủ trọ vừa và nhỏ',
-      features: [
-        'Đăng tối đa 10 tin/tháng',
-        'Hiển thị trong 30 ngày',
-        'Ảnh tối đa 15 tấm/tin',
-        '5 lượt đẩy tin/tháng',
-        'Hỗ trợ ưu tiên 24/7'
-      ],
-      buttonText: 'Nâng cấp ngay',
-      premium: true,
-      popular: true
-    },
-    {
-      name: 'Gói Doanh Nghiệp',
-      price: '499.000',
-      numericalPrice: 499000,
-      description: 'Giải pháp toàn diện cho hệ thống căn hộ',
-      features: [
-        'Không giới hạn số lượng tin',
-        'Hiển thị không thời hạn',
-        'Ảnh & Video không giới hạn',
-        '30 lượt đẩy tin/tháng',
-        'Gắn nhãn "Đối tác xác minh"',
-        'Quản lý đa cửa hàng'
-      ],
-      buttonText: 'Nâng cấp ngay',
-      premium: true
+  useEffect(() => {
+    fetchPlans();
+    if (user) {
+      fetchUserSubscription();
     }
-  ];
+  }, [user]);
+
+  const fetchUserSubscription = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', user?.id)
+        .single();
+      
+      if (error) throw error;
+      if (data?.subscription_tier) {
+        setCurrentSubscriptionTier(data.subscription_tier as any);
+      }
+    } catch (err) {
+      console.error('Error fetching user subscription tier:', err);
+    }
+  };
+
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('system_services')
+        .select('*')
+        .order('numerical_price', { ascending: true });
+      
+      if (error) throw error;
+      
+      const formattedPlans = (data || []).map((plan: any) => ({
+        id: plan.id,
+        name: plan.name,
+        price: plan.price,
+        numericalPrice: plan.numerical_price,
+        description: plan.description,
+        features: plan.features,
+        buttonText: plan.button_text,
+        premium: plan.premium,
+        popular: plan.popular
+      }));
+      
+      setPlans(formattedPlans);
+    } catch (err: any) {
+      console.error('Error fetching services:', err);
+      showToast('Không thể tải thông tin gói dịch vụ!', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePlanSelection = (plan: any) => {
     if (plan.numericalPrice === 0) {
@@ -85,7 +95,7 @@ export const PricingPage = ({ onNavigate, user, onLogout }: PricingPageProps) =>
     showToast('Đang kết nối cổng VNPay...', 'info');
 
     try {
-      const tier = selectedPlan.name === 'Gói Chuyên Nghiệp' ? 'pro' : 'enterprise';
+      const tier = selectedPlan.id === 'pro' ? 'pro' : 'enterprise';
       // Tạo mã SUB_[tier]_[userId]_[timestamp]
       const orderId = `SUB_${tier}_${user.id}_${Date.now().toString().slice(-6)}`;
       
@@ -125,10 +135,7 @@ export const PricingPage = ({ onNavigate, user, onLogout }: PricingPageProps) =>
         }
         @keyframes shimmer-border {
           0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .pricing-enterprise-card {
+          50% { background-positi         .pricing-enterprise-card {
           position: relative;
           background: linear-gradient(180deg, #ffffff 0%, #fffdf0 100%);
           border: 2.5px solid transparent !important;
@@ -160,31 +167,65 @@ export const PricingPage = ({ onNavigate, user, onLogout }: PricingPageProps) =>
         </section>
 
         {/* Pricing Cards */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {plans.map((plan, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + idx * 0.1 }}
-              className={
-                plan.name === 'Gói Doanh Nghiệp'
-                  ? `relative rounded-[40px] p-10 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col justify-between pricing-enterprise-card`
-                  : `relative bg-white rounded-[40px] p-10 border-2 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col justify-between ${
-                      plan.popular ? 'border-primary shadow-xl shadow-primary/5' : 'border-slate-100'
-                    }`
-              }
-            >
-              {plan.popular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white px-6 py-1.5 rounded-full text-sm font-black uppercase tracking-widest shadow-md">
-                  Phổ biến nhất
+        <section className="relative min-h-[350px]">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse bg-white rounded-[40px] p-10 border border-slate-100/80 shadow-sm flex flex-col justify-between space-y-8 min-h-[500px]">
+                  <div className="space-y-6 text-left">
+                    <div className="space-y-3">
+                      {/* Name placeholder */}
+                      <div className="h-7 w-2/3 rounded-xl bg-slate-100"></div>
+                      {/* Description placeholder */}
+                      <div className="space-y-1.5">
+                        <div className="h-4 w-full rounded-lg bg-slate-100"></div>
+                        <div className="h-4 w-5/6 rounded-lg bg-slate-100"></div>
+                      </div>
+                    </div>
+                    {/* Price placeholder */}
+                    <div className="h-12 w-1/2 rounded-2xl bg-slate-100"></div>
+                    <div className="h-px bg-slate-100 w-full"></div>
+                    {/* Features list placeholders */}
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4].map((f) => (
+                        <div key={f} className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-slate-100 shrink-0"></div>
+                          <div className="h-4 w-3/4 rounded-lg bg-slate-100"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Button placeholder */}
+                  <div className="h-14 w-full rounded-2xl bg-slate-100"></div>
                 </div>
-              )}
-              {plan.name === 'Gói Doanh Nghiệp' && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white px-6 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25 flex items-center gap-1 animate-bounce">
-                  <Crown className="w-3.5 h-3.5 fill-current" /> ĐỐI TÁC KHUYÊN DÙNG
-                </div>
-              )}
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {plans.map((plan, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + idx * 0.1 }}
+                  className={
+                    plan.name === 'Gói Doanh Nghiệp'
+                      ? `relative rounded-[40px] p-10 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col justify-between pricing-enterprise-card`
+                      : `relative bg-white rounded-[40px] p-10 border-2 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col justify-between ${
+                          plan.popular ? 'border-primary shadow-xl shadow-primary/5' : 'border-slate-100'
+                        }`
+                  }
+                >
+                  {plan.popular && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white px-6 py-1.5 rounded-full text-sm font-black uppercase tracking-widest shadow-md">
+                      Phổ biến nhất
+                    </div>
+                  )}
+                  {plan.name === 'Gói Doanh Nghiệp' && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white px-6 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25 flex items-center gap-1 animate-bounce">
+                      <Crown className="w-3.5 h-3.5 fill-current" /> ĐỐI TÁC KHUYÊN DÙNG
+                    </div>
+                  )}
               
               <div className="space-y-6 flex-1 text-left">
                 <div>
@@ -193,7 +234,9 @@ export const PricingPage = ({ onNavigate, user, onLogout }: PricingPageProps) =>
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900 font-display">{plan.price}</span>
+                  <span className="text-4xl font-black text-slate-900 font-display">
+                    {plan.numericalPrice === 0 ? '0' : plan.numericalPrice.toLocaleString('vi-VN')}
+                  </span>
                   <span className="text-slate-400 font-bold">VNĐ/tháng</span>
                 </div>
 
@@ -215,21 +258,30 @@ export const PricingPage = ({ onNavigate, user, onLogout }: PricingPageProps) =>
               </div>
 
               <div className="mt-8">
-                <button 
-                  onClick={() => handlePlanSelection(plan)}
-                  className={`w-full py-4 rounded-2xl font-black transition-all active:scale-95 uppercase tracking-widest text-xs cursor-pointer ${
-                    plan.name === 'Gói Doanh Nghiệp'
-                    ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white shadow-xl shadow-orange-500/30 hover:brightness-110 hover:shadow-orange-500/50'
-                    : plan.popular 
-                      ? 'bg-primary text-white shadow-xl shadow-primary/30 hover:bg-primary-hover' 
-                      : 'bg-slate-900 text-white hover:bg-slate-800'
-                  }`}
-                >
-                  {plan.buttonText}
-                </button>
+                {plan.id === currentSubscriptionTier ? (
+                  <div className="w-full py-4 text-center bg-orange-50 text-orange-600 rounded-2xl text-xs font-black uppercase tracking-widest border border-orange-200/60 flex items-center justify-center gap-1.5 cursor-default">
+                    <Sparkles className="w-4 h-4 fill-current animate-pulse text-orange-500" />
+                    <span>Gói hiện tại</span>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handlePlanSelection(plan)}
+                    className={`w-full py-4 rounded-2xl font-black transition-all active:scale-95 uppercase tracking-widest text-xs cursor-pointer ${
+                      plan.name === 'Gói Doanh Nghiệp'
+                      ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white shadow-xl shadow-orange-500/30 hover:brightness-110 hover:shadow-orange-500/50'
+                      : plan.popular 
+                        ? 'bg-primary text-white shadow-xl shadow-primary/30 hover:bg-primary-hover' 
+                        : 'bg-slate-900 text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    {plan.buttonText}
+                  </button>
+                )}
               </div>
-            </motion.div>
-          ))}
+                </motion.div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Individual Services */}

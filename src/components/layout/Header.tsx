@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 
 import { useAuth } from '../../context/AuthContext';
 
-export type Page = 'home' | 'login' | 'register' | 'store' | 'manage' | 'contact' | 'search' | 'tenant' | 'admin' | 'listing-detail' | 'my-store';
+export type Page = 'home' | 'login' | 'register' | 'store' | 'manage' | 'contact' | 'search' | 'tenant' | 'admin' | 'listing-detail' | 'my-store' | 'pricing';
 
 interface HeaderProps {
   user: SupabaseUser | null;
@@ -210,6 +210,16 @@ export const Header = ({ user, onLogout, onNavigate, activePath, children }: Hea
           <div className="flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-2 md:gap-4 ml-2">
+                {currentRole === 'landlord' && (subscriptionTier === 'pro' || subscriptionTier === 'enterprise') && (
+                  <button
+                    onClick={() => onNavigate('pricing')}
+                    className="h-10 px-4 rounded-full bg-[#fffbf5] hover:bg-orange-50 border border-orange-200/80 text-orange-600 font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all duration-200 cursor-pointer shrink-0"
+                    title="Xem chi tiết gói dịch vụ"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 fill-current animate-pulse text-orange-500" />
+                    <span>{subscriptionTier === 'enterprise' ? 'Enterprise Member' : 'Pro Member'}</span>
+                  </button>
+                )}
                 {currentRole === 'landlord' && (
                   <button
                     onClick={() => onNavigate('manage', { tab: 'listings', action: 'add-listing' })}
